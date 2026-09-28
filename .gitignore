@@ -1,0 +1,8 @@
+# Fondo de WezTerm: personal/pesado, no viaja con el repo.
+# wezterm.lua cae al color del tema si no lo encuentra.
+wezterm/*.jpg
+wezterm/*.jpeg
+wezterm/*.png
+
+# Plugins de tmux (tpm los clona solos con prefix + I)
+tmux/plugins/
