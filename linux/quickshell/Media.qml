@@ -24,6 +24,87 @@ Singleton {
     // Song panel under the bar's music icon
     property bool panelOpen: false
 
+    // ---- Shuffle, repeat, volume and like -----------------------------------
+    // spotify_player exposes none of these over MPRIS, so for it they go
+    // through its own CLI (which talks to the running app); any other player
+    // uses MPRIS.
+
+    readonly property bool isSpotifyPlayer: (player?.dbusName ?? "").indexOf("spotify_player") !== -1
+    property var spotifyState: ({ shuffle: false, repeat: "off", volume: 0 })
+
+    readonly property bool shuffleAvailable: isSpotifyPlayer || (player?.shuffleSupported ?? false)
+    readonly property bool shuffleOn: isSpotifyPlayer ? spotifyState.shuffle : (player?.shuffle ?? false)
+    readonly property bool repeatAvailable: isSpotifyPlayer || (player?.loopSupported ?? false)
+    // "off" | "all" | "one"
+    readonly property string repeatMode: isSpotifyPlayer
+        ? ({ off: "off", context: "all", track: "one" })[spotifyState.repeat] ?? "off"
+        : player?.loopState === MprisLoopState.Track ? "one"
+        : player?.loopState === MprisLoopState.Playlist ? "all" : "off"
+    readonly property bool volumeAvailable: isSpotifyPlayer || (player?.volumeSupported ?? false)
+    readonly property real volume: isSpotifyPlayer ? spotifyState.volume / 100 : (player?.volume ?? 0)
+
+    function spotifyCommand(args) {
+        Quickshell.execDetached(["spotify_player", ...args]);
+        stateRefresh.restart();
+    }
+
+    function toggleShuffle() {
+        if (isSpotifyPlayer) spotifyCommand(["playback", "shuffle"]);
+        else player.shuffle = !player.shuffle;
+    }
+
+    // off -> all -> one -> off, the order spotify_player also uses
+    function cycleRepeat() {
+        if (isSpotifyPlayer) {
+            spotifyCommand(["playback", "repeat"]);
+        } else {
+            player.loopState = repeatMode === "off" ? MprisLoopState.Playlist
+                : repeatMode === "all" ? MprisLoopState.Track : MprisLoopState.None;
+        }
+    }
+
+    function setVolume(fraction) {
+        const value = Math.max(0, Math.min(1, fraction));
+        if (isSpotifyPlayer) spotifyCommand(["playback", "volume", String(Math.round(value * 100))]);
+        else player.volume = value;
+    }
+
+    // Liking is a Spotify feature, so it only exists for spotify_player
+    function like(unlike) {
+        spotifyCommand(unlike ? ["like", "--unlike"] : ["like"]);
+    }
+
+    Process {
+        id: spotifyStateQuery
+        command: ["spotify_player", "get", "key", "playback"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const d = JSON.parse(text);
+                    root.spotifyState = {
+                        shuffle: !!d.shuffle_state,
+                        repeat: d.repeat_state ?? "off",
+                        volume: d.device?.volume_percent ?? 0
+                    };
+                } catch (e) {}
+            }
+        }
+    }
+
+    // State refresh while the panel is open, and right after an action
+    Timer {
+        interval: 2000
+        repeat: true
+        triggeredOnStart: true
+        running: root.panelOpen && root.isSpotifyPlayer
+        onTriggered: spotifyStateQuery.running = true
+    }
+    Timer {
+        id: stateRefresh
+        interval: 500
+        onTriggered: spotifyStateQuery.running = true
+    }
+
     // Overlay
     property bool lyricsVisible: false
     property bool editing: false

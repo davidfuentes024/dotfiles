@@ -1,9 +1,0 @@
-# ncspot settings. The `theme` command combines this file with the active
-# theme's colors into ~/.config/ncspot/config.toml (generated, not tracked).
-
-# Nerd Font glyphs for play/pause/shuffle/repeat
-use_nerdfont = true
-# Track changes already show in the bar's music icon and panel
-notify = false
-gapless = true
-library_tabs = ["tracks", "albums", "artists", "playlists", "podcasts"]
