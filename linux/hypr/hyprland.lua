@@ -539,7 +539,7 @@ hl.window_rule({
 -- screen; ignore_alpha limits the blur to its visible part (the box).
 hl.layer_rule({
     name  = "blur-lyrics",
-    match = { namespace = "^lyrics$" },
+    match = { namespace = "^qs-music-lyrics$" },
     blur  = true,
     ignore_alpha = 0.1,
 })

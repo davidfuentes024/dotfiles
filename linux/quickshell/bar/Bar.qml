@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import ".."
+import "../qs-music"
 
 // Top bar: desktops and window title | clock | system status
 PanelWindow {
@@ -61,7 +62,8 @@ PanelWindow {
     }
 
     // Outside the layout, just right of the clock, so it never shifts the clock
-    MediaWidget {
+    // (qs-music module)
+    MusicButton {
         x: layout.x + clock.x + clock.width + 16
         anchors.verticalCenter: parent.verticalCenter
     }

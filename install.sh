@@ -61,6 +61,9 @@ link_macos() {
   : # macOS-specific configs are sourced from the repo (macos/zsh); nothing to link yet
 }
 
+# Modules kept in their own repos (e.g. linux/quickshell/qs-music)
+git -C "$DOTFILES_DIR" submodule update --init --recursive
+
 link_shared
 case "$(uname -s)" in
   Linux)  link_linux ;;

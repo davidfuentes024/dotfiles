@@ -7,7 +7,7 @@ import "bar"
 import "notifications"
 import "osd"
 import "launcher"
-import "lyrics"
+import "qs-music"
 
 // Entry point: one bar per monitor
 ShellRoot {
@@ -24,7 +24,18 @@ ShellRoot {
     NotificationPopups {}
     Osd {}
     Launcher {}
+    // qs-music (synced lyrics); its colors and font follow the active theme
     LyricsOverlay {}
+    Binding { target: MusicStyle; property: "bg"; value: Theme.bg }
+    Binding { target: MusicStyle; property: "bgAlt"; value: Theme.bgAlt }
+    Binding { target: MusicStyle; property: "surface"; value: Theme.surface }
+    Binding { target: MusicStyle; property: "overlay"; value: Theme.overlay }
+    Binding { target: MusicStyle; property: "fg"; value: Theme.fg }
+    Binding { target: MusicStyle; property: "fgDim"; value: Theme.fgDim }
+    Binding { target: MusicStyle; property: "accent"; value: Theme.accent }
+    Binding { target: MusicStyle; property: "red"; value: Theme.red }
+    Binding { target: MusicStyle; property: "font"; value: Theme.font }
+    Binding { target: MusicStyle; property: "fontSize"; value: Theme.fontSize }
 
     Variants {
         model: Quickshell.screens

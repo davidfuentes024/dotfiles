@@ -1,0 +1,3 @@
+[submodule "linux/quickshell/qs-music"]
+	path = linux/quickshell/qs-music
+	url = https://github.com/davidfuentes024/qs-music
