@@ -479,7 +479,16 @@ hl.window_rule({
     no_focus = true,
 })
 
--- Bluetooth manager (opened from Waybar) as a centered floating window
+-- btop (opened from the bar's usage summary) as a centered floating window
+hl.window_rule({
+    name  = "float-btop",
+    match = { class = "^btop$" },
+    float  = true,
+    size   = { 1200, 750 },
+    center = true,
+})
+
+-- Bluetooth manager (opened from the bar) as a centered floating window
 hl.window_rule({
     name  = "float-bluetui",
     match = { class = "^bluetui$" },

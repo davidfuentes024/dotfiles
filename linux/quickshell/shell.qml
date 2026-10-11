@@ -1,3 +1,5 @@
+//@ pragma UseQApplication
+// QApplication mode is needed for tray menus (platform menus)
 import QtQuick
 import Quickshell
 import Quickshell.Io

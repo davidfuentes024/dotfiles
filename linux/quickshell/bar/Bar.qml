@@ -45,6 +45,8 @@ PanelWindow {
             spacing: 16
 
             Item { Layout.fillWidth: true }
+            Tray {}
+            SystemUsage {}
             LocalIp {}
             NetworkStatus {}
             BluetoothStatus {}
