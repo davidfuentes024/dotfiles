@@ -200,9 +200,34 @@ hl.gesture({
 -- translate to Ctrl (copy, paste, etc.) arrive here as SUPER.
 local cmd = "SUPER"
 
+-- Cmd+Q quits the whole app like macOS. Closing the window is not enough:
+-- tray apps (Discord, Steam, Spotify...) just hide and keep running. SIGTERM
+-- (not SIGKILL) still lets the app save its state and exit cleanly.
+-- Exception: every WezTerm window shares one process, so killing it would take
+-- all terminals down with no prompt. There Cmd+Q only closes the focused
+-- window, which goes through WezTerm's close confirmation.
+local function quitActiveApp()
+    local w = hl.get_active_window()
+    if not w or not w.pid or w.pid <= 1 then return end
+    if w.class == "org.wezfurlong.wezterm" then
+        hl.dispatch(hl.dsp.window.close())
+        return
+    end
+    hl.exec_cmd("kill -TERM " .. w.pid)
+end
+
+-- Cmd+Option+Esc: force quit (macOS shortcut) for apps that hang and ignore
+-- SIGTERM. Unsaved work is lost.
+local function forceQuitActiveApp()
+    local w = hl.get_active_window()
+    if not w or not w.pid or w.pid <= 1 then return end
+    hl.exec_cmd("kill -KILL " .. w.pid)
+end
+
 hl.bind(cmd .. " + RETURN",    hl.dsp.exec_cmd(terminal))
 hl.bind(cmd .. " + SPACE",     hl.dsp.exec_cmd(menu))              -- Cmd+Space: launcher
-hl.bind(cmd .. " + Q",         hl.dsp.window.close())              -- Cmd+Q: close window
+hl.bind(cmd .. " + Q",         quitActiveApp)                      -- Cmd+Q: quit app
+hl.bind(cmd .. " + ALT + Escape", forceQuitActiveApp)              -- Cmd+Option+Esc: force quit
 hl.bind(cmd .. " + TAB",       hl.dsp.window.cycle_next())         -- Cmd+Tab: next window
 hl.bind("ALT + TAB",           hl.dsp.window.cycle_next())         -- Alt+Tab: way out of games, where Alt is plain Alt
 hl.bind(cmd .. " + E",         hl.dsp.exec_cmd(fileManager))

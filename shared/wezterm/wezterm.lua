@@ -165,8 +165,10 @@ end
 -- (a gray bar with buttons) also raised "font problem" warnings for its title.
 config.window_decorations = is_macos and "RESIZE" or "NONE"
 
--- Slight transparency so the compositor blur (Hyprland/macOS) shows through
-config.window_background_opacity = 0.88
+-- macOS: slight transparency so the compositor blur shows through. Linux:
+-- opaque, because Hyprland recomputes the blur behind a translucent window on
+-- every terminal redraw, which is expensive on the 4K monitor
+config.window_background_opacity = is_macos and 0.88 or 1.0
 config.macos_window_background_blur = 20
 
 config.window_padding = {
@@ -186,6 +188,10 @@ config.use_fancy_tab_bar = false
 
 config.default_cursor_style = 'BlinkingBar'
 config.cursor_blink_rate = 700
+-- Hard on/off blink: the default fade redraws at animation_fps (and makes
+-- Hyprland recompute the blur behind the window) for the whole blink cycle
+config.cursor_blink_ease_in = 'Constant'
+config.cursor_blink_ease_out = 'Constant'
 
 
 -- ============================================================
@@ -200,6 +206,8 @@ config.scrollback_lines = 10000
 -- ============================================================
 
 config.animation_fps = 60
+-- 120 for the laptop's 120 Hz panel; on 60 Hz monitors Wayland frame
+-- callbacks already keep WezTerm from drawing frames that are never shown
 config.max_fps = 120
 
 -- Default OpenGL renderer. Rendering on the Intel iGPU (WebGpu LowPower) left
