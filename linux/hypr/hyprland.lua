@@ -243,8 +243,29 @@ hl.bind(cmd .. " + Print",     function() screenshot("window") end)
 --   Ctrl+Option+W  delete the current desktop (its windows move to the previous one)
 --   Ctrl+[0-9] / Ctrl+Shift+[0-9]  go to / move window to desktop N (if it exists)
 --   Ctrl+Left/Right                previous / next desktop
-local desktopRules = {}
 local desktopCount = 0
+
+-- The desktop count lives in a state file so it survives config reloads
+-- and restarts (macOS keeps spaces across reboots too)
+local stateDir  = (os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")) .. "/hypr"
+local stateFile = stateDir .. "/desktops"
+
+local function readSavedCount()
+    local f = io.open(stateFile)
+    if not f then return nil end
+    local n = tonumber(f:read("*l"))
+    f:close()
+    return n
+end
+
+local function saveCount()
+    os.execute('mkdir -p "' .. stateDir .. '"')
+    local f = io.open(stateFile, "w")
+    if f then
+        f:write(tostring(desktopCount), "\n")
+        f:close()
+    end
+end
 
 local function normalWorkspaces()
     local list = {}
@@ -260,22 +281,21 @@ local function refreshBar()
     hl.exec_cmd("pkill -SIGUSR2 waybar")
 end
 
+-- Persistent rules are only ever added. Deleting a desktop rewrites the
+-- saved count and reloads the config instead of disabling a rule: disabled
+-- rules linger and bars keep showing them as ghost desktops.
 local function addDesktop()
     desktopCount = desktopCount + 1
-    desktopRules[desktopCount] = hl.workspace_rule({ workspace = tostring(desktopCount), persistent = true })
+    hl.workspace_rule({ workspace = tostring(desktopCount), persistent = true })
     return desktopCount
 end
 
-local function removeLastDesktop()
-    desktopRules[desktopCount]:set_enabled(false)
-    desktopRules[desktopCount] = nil
-    desktopCount = desktopCount - 1
+do
+    local highest = 1
+    for _, ws in ipairs(normalWorkspaces()) do highest = math.max(highest, ws.id) end
+    local target = readSavedCount() or highest
+    for _ = 1, math.max(target, 1) do addDesktop() end
 end
-
--- On (re)load, keep every desktop that already exists
-local highest = 1
-for _, ws in ipairs(normalWorkspaces()) do highest = math.max(highest, ws.id) end
-for _ = 1, highest do addDesktop() end
 
 local function currentDesktop()
     local ws = hl.get_active_workspace()
@@ -290,6 +310,7 @@ end
 
 local function newDesktop()
     goToDesktop(addDesktop())
+    saveCount()
     refreshBar()
 end
 
@@ -314,9 +335,10 @@ local function deleteDesktop()
         for id = current + 1, desktopCount do moveAll(id, id - 1) end
     end
 
-    removeLastDesktop()
     goToDesktop(destination)
-    refreshBar()
+    desktopCount = desktopCount - 1
+    saveCount()
+    hl.exec_cmd("hyprctl reload && sleep 0.3 && pkill -SIGUSR2 waybar")
 end
 
 hl.bind("CTRL + ALT + N", newDesktop)
@@ -336,6 +358,7 @@ hl.on("workspace.created", function()
         for _, ws in ipairs(normalWorkspaces()) do
             if ws.id > desktopCount then
                 local id = addDesktop()
+                saveCount()
                 if ws.id ~= id then
                     hl.dispatch(hl.dsp.workspace.change_id({ workspace = ws.id, id = id }))
                     hl.dispatch(hl.dsp.workspace.rename({ workspace = id, name = tostring(id) }))
