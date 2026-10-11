@@ -133,6 +133,13 @@ config.scrollback_lines = 10000
 config.animation_fps = 60
 config.max_fps = 120
 
+-- Render on the Intel iGPU: the RTX 3050 only has 4 GB of VRAM and games fill
+-- it, which made WezTerm fail with EGL BAD_ALLOC and freeze its windows
+if not is_macos then
+  config.front_end = 'WebGpu'
+  config.webgpu_power_preference = 'LowPower'
+end
+
 
 -- ============================================================
 -- KEYS
