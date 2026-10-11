@@ -16,14 +16,14 @@ config.font_size = 13.0
 -- TEMA
 -- ============================================================
 
--- One Dark Pro "Darker" (VS Code theme palette). Defined inline because
+-- One Dark Pro "Darker" palette on a neutral soft-black background. Defined inline because
 -- WezTerm's bundled One Dark variants use the lighter, bluer #282c34 background.
 config.color_schemes = {
   ['One Dark Pro Darker'] = {
     foreground = '#abb2bf',
-    background = '#23272e',
+    background = '#1c1c1e',
     cursor_bg = '#528bff',
-    cursor_fg = '#23272e',
+    cursor_fg = '#1c1c1e',
     cursor_border = '#528bff',
     selection_bg = '#3e4451',
     selection_fg = '#abb2bf',
@@ -92,6 +92,10 @@ end
 -- ============================================================
 
 config.window_decorations = "RESIZE"
+
+-- Slight transparency so the compositor blur (Hyprland/macOS) shows through
+config.window_background_opacity = 0.88
+config.macos_window_background_blur = 20
 
 config.window_padding = {
   left = 12,
