@@ -1,10 +1,13 @@
 # Prompt: a segmented bar with the current directory and git branch/status,
-# then the input on its own line. Colors come from the active palette.
+# then the input on its own line. Colors come from [palettes.current]; the
+# `theme` command writes a copy with the active theme's colors to
+# ~/.local/state/theme/starship.toml (used via STARSHIP_CONFIG). The values
+# below are the default theme (neon, soft black).
 
 "$schema" = "https://starship.rs/config-schema.json"
 
 add_newline = true
-palette = "neon"
+palette = "current"
 
 format = """
 [](fg:accent)\
@@ -17,9 +20,9 @@ $fill\
 $cmd_duration
 $character"""
 
-[palettes.neon]
+[palettes.current]
 base = "#1c1c1e"
-surface = "#2c313a"
+surface = "#2c2c2f"
 text = "#dcdfe4"
 accent = "#4aa5f0"
 success = "#8cc265"

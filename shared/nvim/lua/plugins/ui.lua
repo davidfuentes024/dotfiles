@@ -1,26 +1,22 @@
 return {
-  -- TEMA: One Dark Pro (Negro puro y limpio)
+  -- THEME: picked by the shared `theme` command (see lua/core/theme.lua)
   {
     "olimorris/onedarkpro.nvim",
     priority = 1000,
     config = function()
-      require("onedarkpro").setup({
-        options = {
-          transparency = true, -- Fondo transparente real
-          highlight_inactive_windows = false,
-        },
-      })
-      vim.cmd.colorscheme("onedark")
+      require("core.theme").apply()
     end
   },
+  { "rebelot/kanagawa.nvim", lazy = true },
+  { "datsfilipe/vesper.nvim", lazy = true },
 
-  -- BARRA DE ESTADO (Sincronizada con One Dark)
+  -- STATUS LINE (follows the active colorscheme)
   {
     "nvim-lualine/lualine.nvim",
     config = function()
       require("lualine").setup({
         options = {
-          theme = "onedark",
+          theme = "auto",
           icons_enabled = true,
           section_separators = "",
           component_separators = "|",
@@ -29,7 +25,7 @@ return {
     end
   },
 
-  -- ICONOS
+  -- ICONS
   {
     "echasnovski/mini.icons",
     version = false,

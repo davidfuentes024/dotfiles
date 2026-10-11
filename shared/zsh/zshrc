@@ -153,5 +153,13 @@ case "$OSTYPE" in
   linux*)  [ -f "$DOTFILES_DIR/linux/zsh/linux.zsh" ] && source "$DOTFILES_DIR/linux/zsh/linux.zsh" ;;
 esac
 
+# Dotfiles commands (e.g. `theme`)
+export PATH="$DOTFILES_DIR/shared/bin:$PATH"
+
+# Prompt colors follow the active theme once `theme` has generated them
+_theme_starship="${XDG_STATE_HOME:-$HOME/.local/state}/theme/starship.toml"
+[ -f "$_theme_starship" ] && export STARSHIP_CONFIG="$_theme_starship"
+unset _theme_starship
+
 # Machine-local secrets (tokens, API keys). Gitignored: never commit it.
 [ -f "$DOTFILES_DIR/shared/zsh/secrets.zsh" ] && source "$DOTFILES_DIR/shared/zsh/secrets.zsh"

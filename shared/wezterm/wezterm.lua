@@ -2,11 +2,34 @@ local wezterm = require 'wezterm'
 local config = wezterm.config_builder()
 
 -- ============================================================
--- FUENTE
+-- FONT
 -- ============================================================
 
-config.font = wezterm.font('JetBrains Mono', {
-  weight = 'Medium',
+-- Family picked with `theme font <name>` (shared/themes/fonts)
+local font_state = (os.getenv('XDG_STATE_HOME') or (wezterm.home_dir .. '/.local/state')) .. '/theme/font'
+local font_name = 'jetbrains'
+do
+  local f = io.open(font_state, 'r')
+  if f then
+    font_name = f:read('*l') or font_name
+    f:close()
+  end
+end
+local font_family = 'JetBrainsMono Nerd Font'
+do
+  local f = io.open(wezterm.home_dir .. '/.config/themes/fonts/' .. font_name .. '.toml', 'r')
+  if f then
+    for line in f:lines() do
+      font_family = line:match('^family%s*=%s*"(.-)"') or font_family
+    end
+    f:close()
+  end
+end
+wezterm.add_to_config_reload_watch_list(font_state)
+
+config.font = wezterm.font_with_fallback({
+  { family = font_family, weight = 'Medium' },
+  'JetBrainsMono Nerd Font',
 })
 
 -- Hyprland already scales the UI (1.25 laptop / 2 on the 4K monitor), so the
@@ -16,41 +39,84 @@ config.font_size = is_macos and 13.0 or 9.0
 
 
 -- ============================================================
--- TEMA
+-- THEME
 -- ============================================================
+-- Colors come from the shared theme files (shared/themes), switched with the
+-- `theme` command. WezTerm reloads when the saved choice changes.
 
--- One Dark Pro "Darker" palette on a neutral soft-black background. Defined inline because
--- WezTerm's bundled One Dark variants use the lighter, bluer #282c34 background.
-config.color_schemes = {
-  ['One Dark Pro Darker'] = {
-    foreground = '#abb2bf',
-    background = '#1c1c1e',
-    cursor_bg = '#528bff',
-    cursor_fg = '#1c1c1e',
-    cursor_border = '#528bff',
-    selection_bg = '#3e4451',
-    selection_fg = '#abb2bf',
-    split = '#3e4451',
-    ansi = {
-      '#3f4451', '#e05561', '#8cc265', '#d18f52',
-      '#4aa5f0', '#c162de', '#42b3c2', '#d7dae0',
+local themes_dir = wezterm.home_dir .. '/.config/themes'
+local state_dir = (os.getenv('XDG_STATE_HOME') or (wezterm.home_dir .. '/.local/state')) .. '/theme'
+
+local function read_line(path, fallback)
+  local f = io.open(path, 'r')
+  if not f then return fallback end
+  local line = f:read('*l')
+  f:close()
+  return line or fallback
+end
+
+-- Parses `key = "value"` lines of a theme file
+local function read_theme_file(path)
+  local colors = {}
+  local f = io.open(path, 'r')
+  if not f then return colors end
+  for line in f:lines() do
+    local key, value = line:match('^(%w[%w_]*)%s*=%s*"(.-)"')
+    if key then colors[key] = value end
+  end
+  f:close()
+  return colors
+end
+
+local theme_name = read_line(state_dir .. '/name', 'neon')
+local black_name = read_line(state_dir .. '/black', 'soft')
+local c = read_theme_file(themes_dir .. '/palettes/' .. theme_name .. '.toml')
+for key, value in pairs(read_theme_file(themes_dir .. '/blacks/' .. black_name .. '.toml')) do
+  c[key] = value
+end
+
+wezterm.add_to_config_reload_watch_list(state_dir .. '/name')
+wezterm.add_to_config_reload_watch_list(state_dir .. '/black')
+
+if c.bg and c.fg then
+  config.color_schemes = {
+    ['dotfiles'] = {
+      foreground = c.fg,
+      background = c.bg,
+      cursor_bg = c.accent,
+      cursor_fg = c.bg,
+      cursor_border = c.accent,
+      selection_bg = c.overlay,
+      selection_fg = c.fg,
+      split = c.overlay,
+      ansi = {
+        c.surface, c.red, c.green, c.yellow,
+        c.blue, c.magenta, c.cyan, c.fg,
+      },
+      brights = {
+        c.fg_dim, c.bright_red, c.bright_green, c.bright_yellow,
+        c.bright_blue, c.bright_magenta, c.bright_cyan, '#ffffff',
+      },
+      tab_bar = {
+        background = c.bg,
+        active_tab = { bg_color = c.accent, fg_color = c.bg },
+        inactive_tab = { bg_color = c.bg_alt, fg_color = c.fg_dim },
+        inactive_tab_hover = { bg_color = c.surface, fg_color = c.fg },
+        new_tab = { bg_color = c.bg, fg_color = c.fg_dim },
+        new_tab_hover = { bg_color = c.surface, fg_color = c.fg },
+      },
     },
-    brights = {
-      '#4f5666', '#ff616e', '#a5e075', '#f0a45d',
-      '#4dc4ff', '#de73ff', '#4cd1e0', '#e6e6e6',
-    },
-  },
-}
-
-config.color_scheme = 'One Dark Pro Darker'
+  }
+  config.color_scheme = 'dotfiles'
+end
 
 
 -- ============================================================
--- FONDO
+-- BACKGROUND
 -- ============================================================
--- La imagen no viaja en el repo de dotfiles (es pesada/personal), así que
--- si no está presente en este equipo, o si `bg color` la desactivó, cae al
--- fondo plano del color_scheme en vez de romper la config.
+-- The image is not tracked in the repo (heavy/personal), so when it is missing
+-- on this machine, or `bg color` turned it off, the theme's flat background is
+-- used instead of breaking the config.
 
 local function file_exists(path)
   local f = io.open(path, 'r')
@@ -91,7 +157,7 @@ end
 
 
 -- ============================================================
--- VENTANA
+-- WINDOW
 -- ============================================================
 
 config.window_decorations = "RESIZE"
@@ -127,18 +193,15 @@ config.scrollback_lines = 10000
 
 
 -- ============================================================
--- RENDERIZADO
+-- RENDERING
 -- ============================================================
 
 config.animation_fps = 60
 config.max_fps = 120
 
--- Render on the Intel iGPU: the RTX 3050 only has 4 GB of VRAM and games fill
--- it, which made WezTerm fail with EGL BAD_ALLOC and freeze its windows
-if not is_macos then
-  config.front_end = 'WebGpu'
-  config.webgpu_power_preference = 'LowPower'
-end
+-- Default OpenGL renderer. Rendering on the Intel iGPU (WebGpu LowPower) left
+-- new windows black while Hyprland runs on the NVIDIA GPU; the freezes under
+-- full VRAM while gaming are handled with the GPU setup (phase 5) instead.
 
 
 -- ============================================================
