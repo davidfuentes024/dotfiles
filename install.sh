@@ -42,6 +42,7 @@ link_shared() {
   link "$DOTFILES_DIR/shared/tmux"       "$HOME/.config/tmux"
   link "$DOTFILES_DIR/shared/zsh/zshrc"  "$HOME/.zshrc"
   link "$DOTFILES_DIR/shared/starship/starship.toml" "$HOME/.config/starship.toml"
+  link "$DOTFILES_DIR/shared/themes"     "$HOME/.config/themes"
   # tmux now loads only from ~/.config/tmux
   unlink_stale "$HOME/.tmux.conf"
 }
@@ -62,6 +63,9 @@ case "$(uname -s)" in
   Darwin) link_macos ;;
   *)      echo "Unknown OS: only shared/ configs were linked" ;;
 esac
+
+# Generate the files of the saved (or default) theme
+"$DOTFILES_DIR/shared/bin/theme" apply
 
 # Versioned git hooks (gitleaks secret scan before each commit)
 git -C "$DOTFILES_DIR" config core.hooksPath hooks
