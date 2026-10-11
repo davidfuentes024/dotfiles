@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import "bar"
 import "notifications"
+import "osd"
 
 // Entry point: one bar per monitor
 ShellRoot {
@@ -19,6 +20,7 @@ ShellRoot {
     }
 
     NotificationPopups {}
+    Osd {}
 
     Variants {
         model: Quickshell.screens
