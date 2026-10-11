@@ -8,4 +8,4 @@ A theme is two small files combined at runtime:
 
 Switch with `theme <name>` and `theme black <soft|deep>` (see `shared/bin/theme`).
 The choice is stored in `~/.local/state/theme/{name,black}`; WezTerm, nvim,
-Hyprland, Waybar, starship, tmux, hyprlock and GTK read it from there.
+Hyprland, Quickshell, starship, tmux, hyprlock and GTK read it from there.

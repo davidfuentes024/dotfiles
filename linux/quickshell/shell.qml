@@ -1,0 +1,27 @@
+import QtQuick
+import Quickshell
+import Quickshell.Io
+import "bar"
+
+// Entry point: one bar per monitor
+ShellRoot {
+    id: shell
+
+    property bool barVisible: true
+
+    // `qs ipc call bar toggle` (bound to Cmd+. in Hyprland)
+    IpcHandler {
+        target: "bar"
+        function toggle(): void { shell.barVisible = !shell.barVisible; }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        Bar {
+            required property var modelData
+            screen: modelData
+            visible: shell.barVisible
+        }
+    }
+}

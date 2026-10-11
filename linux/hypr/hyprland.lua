@@ -77,7 +77,7 @@ local menu        = "hyprlauncher"
 hl.on("hyprland.start", function ()
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE HYPRLAND_INSTANCE_SIGNATURE")
     hl.exec_cmd("/usr/lib/hyprpolkitagent/hyprpolkitagent")
-    hl.exec_cmd("waybar")
+    hl.exec_cmd("qs")  -- Quickshell: bar and the rest of the desktop shell
     hl.exec_cmd("mako")
     -- Per-app keyd overrides (linux/keyd/app.conf); needs the user in the keyd group
     hl.exec_cmd("keyd-application-mapper -d")
@@ -210,7 +210,7 @@ hl.bind(cmd .. " + E",         hl.dsp.exec_cmd(fileManager))
 hl.bind(cmd .. " + G",         hl.dsp.window.float({ action = "toggle" }))
 hl.bind(cmd .. " + J",         hl.dsp.layout("togglesplit"))
 hl.bind(cmd .. " + M",         hl.dsp.window.fullscreen())
-hl.bind(cmd .. " + period",    hl.dsp.exec_cmd("pkill -SIGUSR1 waybar"))
+hl.bind(cmd .. " + period",    hl.dsp.exec_cmd("qs ipc call bar toggle"))
 -- Cmd+Ctrl+Q: lock the screen (same shortcut as macOS)
 hl.bind(cmd .. " + CTRL + Q",  hl.dsp.exec_cmd("pidof hyprlock || hyprlock"))
 hl.bind(cmd .. " + SHIFT + Q", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
@@ -315,11 +315,6 @@ local function normalWorkspaces()
     return list
 end
 
--- Bars only learn about some changes on reload
-local function refreshBar()
-    hl.exec_cmd("pkill -SIGUSR2 waybar")
-end
-
 -- Persistent rules are only ever added. Deleting a desktop rewrites the
 -- saved count and reloads the config instead of disabling a rule: disabled
 -- rules linger and bars keep showing them as ghost desktops.
@@ -350,7 +345,6 @@ end
 local function newDesktop()
     goToDesktop(addDesktop())
     saveCount()
-    refreshBar()
 end
 
 local function deleteDesktop()
@@ -377,7 +371,7 @@ local function deleteDesktop()
     goToDesktop(destination)
     desktopCount = desktopCount - 1
     saveCount()
-    hl.exec_cmd("hyprctl reload && sleep 0.3 && pkill -SIGUSR2 waybar")
+    hl.exec_cmd("hyprctl reload")
 end
 
 -- Makes sure desktops 1..n exist (Ctrl+5 with three desktops adds 4 and 5)
@@ -385,7 +379,6 @@ local function ensureDesktop(n)
     if n <= desktopCount then return end
     while desktopCount < n do addDesktop() end
     saveCount()
-    refreshBar()
 end
 
 hl.bind("CTRL + ALT + N", newDesktop)
@@ -413,7 +406,6 @@ hl.on("workspace.created", function()
                     hl.dispatch(hl.dsp.workspace.change_id({ workspace = ws.id, id = id }))
                     hl.dispatch(hl.dsp.workspace.rename({ workspace = id, name = tostring(id) }))
                 end
-                refreshBar()
             end
         end
     end, { timeout = 50, type = "oneshot" })
