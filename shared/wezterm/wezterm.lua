@@ -160,7 +160,10 @@ end
 -- WINDOW
 -- ============================================================
 
-config.window_decorations = "RESIZE"
+-- macOS: resizable without a title bar. Linux: no decorations at all; Hyprland
+-- already moves, resizes and closes windows, and WezTerm's own Wayland frame
+-- (a gray bar with buttons) also raised "font problem" warnings for its title.
+config.window_decorations = is_macos and "RESIZE" or "NONE"
 
 -- Slight transparency so the compositor blur (Hyprland/macOS) shows through
 config.window_background_opacity = 0.88
