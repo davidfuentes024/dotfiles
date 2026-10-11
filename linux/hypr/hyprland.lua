@@ -93,6 +93,35 @@ hl.env("HYPRCURSOR_SIZE", "24")
 ---- LOOK AND FEEL ----
 -----------------------
 
+-- Theme colors from the shared theme files (switched with the `theme` command,
+-- which reloads this config)
+local function readThemeFile(path)
+    local colors = {}
+    local f = io.open(path)
+    if not f then return colors end
+    for line in f:lines() do
+        local key, value = line:match('^(%w[%w_]*)%s*=%s*"#(%x+)"')
+        if key then colors[key] = value end
+    end
+    f:close()
+    return colors
+end
+
+local function readLine(path, fallback)
+    local f = io.open(path)
+    if not f then return fallback end
+    local line = f:read("*l")
+    f:close()
+    return line or fallback
+end
+
+local themeState = (os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")) .. "/theme"
+local themesDir  = os.getenv("HOME") .. "/.config/themes"
+local theme = readThemeFile(themesDir .. "/palettes/" .. readLine(themeState .. "/name", "neon") .. ".toml")
+for key, value in pairs(readThemeFile(themesDir .. "/blacks/" .. readLine(themeState .. "/black", "soft") .. ".toml")) do
+    theme[key] = value
+end
+
 -- Minimal: no gaps, thin borders, no rounding or shadows; soft blur only
 -- for translucent windows (the terminal)
 hl.config({
@@ -101,6 +130,11 @@ hl.config({
         gaps_out    = 0,
         border_size = 1,
         layout      = "dwindle",
+        col = {
+            -- A palette may set its own border color; otherwise the accent
+            active_border   = "rgb(" .. (theme.border or theme.accent or "4aa5f0") .. ")",
+            inactive_border = "rgb(" .. (theme.surface or "2c2c2f") .. ")",
+        },
     },
     decoration = {
         rounding = 0,
@@ -171,6 +205,7 @@ hl.bind(cmd .. " + RETURN",    hl.dsp.exec_cmd(terminal))
 hl.bind(cmd .. " + SPACE",     hl.dsp.exec_cmd(menu))              -- Cmd+Space: launcher
 hl.bind(cmd .. " + Q",         hl.dsp.window.close())              -- Cmd+Q: close window
 hl.bind(cmd .. " + TAB",       hl.dsp.window.cycle_next())         -- Cmd+Tab: next window
+hl.bind("ALT + TAB",           hl.dsp.window.cycle_next())         -- Alt+Tab: way out of games, where Alt is plain Alt
 hl.bind(cmd .. " + E",         hl.dsp.exec_cmd(fileManager))
 hl.bind(cmd .. " + G",         hl.dsp.window.float({ action = "toggle" }))
 hl.bind(cmd .. " + J",         hl.dsp.layout("togglesplit"))
@@ -240,8 +275,12 @@ hl.bind(cmd .. " + Print",     function() screenshot("window") end)
 -- empty, and are only created or deleted explicitly. Ids stay gapless and the
 -- numbering is global across monitors.
 --   Ctrl+Option+N  new desktop at the end
---   Ctrl+Option+W  delete the current desktop (its windows move to the previous one)
---   Ctrl+[0-9] / Ctrl+Shift+[0-9]  go to / move window to desktop N (if it exists)
+--   Ctrl+Q or Ctrl+Option+W  delete the current desktop (its windows move to
+--                  the previous one). Plain Ctrl+W is left alone: nvim splits
+--                  and the shell's delete-word need it. Inside games keyd sends
+--                  Ctrl untouched, so none of these fire (linux/keyd/app.conf).
+--   Ctrl+[0-9] / Ctrl+Shift+[0-9]  go to / move window to desktop N, creating
+--                  desktops up to N when it does not exist yet
 --   Ctrl+Left/Right                previous / next desktop
 local desktopCount = 0
 
@@ -341,13 +380,24 @@ local function deleteDesktop()
     hl.exec_cmd("hyprctl reload && sleep 0.3 && pkill -SIGUSR2 waybar")
 end
 
+-- Makes sure desktops 1..n exist (Ctrl+5 with three desktops adds 4 and 5)
+local function ensureDesktop(n)
+    if n <= desktopCount then return end
+    while desktopCount < n do addDesktop() end
+    saveCount()
+    refreshBar()
+end
+
 hl.bind("CTRL + ALT + N", newDesktop)
 hl.bind("CTRL + ALT + W", deleteDesktop)
+-- keyd turns physical Ctrl+Q into Super+F13, which xkb names XF86Tools
+hl.bind("SUPER + XF86Tools", deleteDesktop)
 
 -- Global so bars and scripts can drive desktops: hyprctl eval 'Desktops.new()'
 Desktops = {
     new    = newDesktop,
     delete = deleteDesktop,
+    goTo   = function(n) ensureDesktop(n); goToDesktop(n) end,
     count  = function() return desktopCount end,
 }
 
@@ -372,9 +422,13 @@ end)
 -- keyd turns physical Ctrl+N into Super+Ctrl+N, leaving Cmd+N for app tabs
 for i = 1, 10 do
     local key = i % 10
-    hl.bind("SUPER + CTRL + " .. key, function() goToDesktop(i) end)
+    hl.bind("SUPER + CTRL + " .. key, function()
+        ensureDesktop(i)
+        goToDesktop(i)
+    end)
     hl.bind("SUPER + CTRL + SHIFT + " .. key, function()
-        if i <= desktopCount then hl.dispatch(hl.dsp.window.move({ workspace = i })) end
+        ensureDesktop(i)
+        hl.dispatch(hl.dsp.window.move({ workspace = i }))
     end)
 end
 
