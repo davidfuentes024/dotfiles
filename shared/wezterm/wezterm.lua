@@ -9,7 +9,10 @@ config.font = wezterm.font('JetBrains Mono', {
   weight = 'Medium',
 })
 
-config.font_size = 13.0
+-- Hyprland already scales the UI (1.25 laptop / 2 on the 4K monitor), so the
+-- macOS size renders too large on Linux
+local is_macos = wezterm.target_triple:find('darwin') ~= nil
+config.font_size = is_macos and 13.0 or 9.0
 
 
 -- ============================================================
@@ -129,6 +132,67 @@ config.scrollback_lines = 10000
 
 config.animation_fps = 60
 config.max_fps = 120
+
+
+-- ============================================================
+-- KEYS
+-- ============================================================
+-- macOS-style shortcuts on SUPER: Cmd on macOS, and on Linux keyd's
+-- per-app map (linux/keyd/app.conf) sends Cmd as SUPER while WezTerm is
+-- focused. Real Ctrl stays free for the shell, tmux and nvim.
+
+local act = wezterm.action
+
+-- Cmd+C: copy the terminal selection to the system clipboard. Without a
+-- selection, forward Ctrl+Insert so nvim can copy its visual selection.
+local copy_or_forward = wezterm.action_callback(function(window, pane)
+  local selection = window:get_selection_text_for_pane(pane)
+  if selection ~= '' then
+    window:perform_action(act.CopyTo('Clipboard'), pane)
+    window:perform_action(act.ClearSelection, pane)
+  else
+    window:perform_action(act.SendKey({ key = 'Insert', mods = 'CTRL' }), pane)
+  end
+end)
+
+config.keys = {
+  -- Clipboard
+  { key = 'c', mods = 'SUPER', action = copy_or_forward },
+  { key = 'v', mods = 'SUPER', action = act.PasteFrom('Clipboard') },
+
+  -- Tabs
+  { key = 't', mods = 'SUPER', action = act.SpawnTab('CurrentPaneDomain') },
+  { key = '[', mods = 'SUPER|SHIFT', action = act.ActivateTabRelative(-1) },
+  { key = ']', mods = 'SUPER|SHIFT', action = act.ActivateTabRelative(1) },
+  { key = '{', mods = 'SUPER|SHIFT', action = act.ActivateTabRelative(-1) },
+  { key = '}', mods = 'SUPER|SHIFT', action = act.ActivateTabRelative(1) },
+
+  -- Splits (Cmd+W closes the pane, or the tab when it is the last pane)
+  { key = 'd', mods = 'SUPER', action = act.SplitHorizontal({ domain = 'CurrentPaneDomain' }) },
+  { key = 'd', mods = 'SUPER|SHIFT', action = act.SplitVertical({ domain = 'CurrentPaneDomain' }) },
+  { key = 'D', mods = 'SUPER|SHIFT', action = act.SplitVertical({ domain = 'CurrentPaneDomain' }) },
+  { key = '[', mods = 'SUPER', action = act.ActivatePaneDirection('Prev') },
+  { key = ']', mods = 'SUPER', action = act.ActivatePaneDirection('Next') },
+  { key = 'w', mods = 'SUPER', action = act.CloseCurrentPane({ confirm = true }) },
+
+  -- Misc
+  { key = 'n', mods = 'SUPER', action = act.SpawnWindow },
+  { key = 'f', mods = 'SUPER', action = act.Search('CurrentSelectionOrEmptyString') },
+  { key = 'k', mods = 'SUPER', action = act.ClearScrollback('ScrollbackAndViewport') },
+  { key = '=', mods = 'SUPER', action = act.IncreaseFontSize },
+  { key = '-', mods = 'SUPER', action = act.DecreaseFontSize },
+  { key = '0', mods = 'SUPER', action = act.ResetFontSize },
+
+  -- Swallow Cmd keys with no terminal meaning so they never reach the shell
+  { key = 'a', mods = 'SUPER', action = act.Nop },
+  { key = 'x', mods = 'SUPER', action = act.Nop },
+  { key = 'z', mods = 'SUPER', action = act.Nop },
+}
+
+-- Cmd+1..9: jump to tab N (Hyprland desktops use Ctrl+1..9, like macOS)
+for i = 1, 9 do
+  table.insert(config.keys, { key = tostring(i), mods = 'SUPER', action = act.ActivateTab(i - 1) })
+end
 
 
 return config
