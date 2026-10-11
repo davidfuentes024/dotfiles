@@ -1,10 +1,10 @@
--- Config minima de Hyprland. Wiki: https://wiki.hypr.land/Configuring/Start/
+-- Minimal Hyprland config. Wiki: https://wiki.hypr.land/Configuring/Start/
 
 ------------------
 ---- MONITORS ----
 ------------------
 
--- Cualquier otro monitor: resolucion preferida, a la derecha, escala 1
+-- Any other monitor: preferred mode, placed automatically, scale 1
 hl.monitor({
     output   = "",
     mode     = "preferred",
@@ -12,7 +12,7 @@ hl.monitor({
     scale    = 1,
 })
 
--- Monitor LG 4K: escala 2 (se ve como 1920x1080 logicos, pero nitido)
+-- LG 4K monitor: scale 2 (1920x1080 logical, but sharp)
 hl.monitor({
     output   = "desc:LG Electronics LG ULTRAFINE 602RMHRA6665",
     mode     = "3840x2160@60",
@@ -20,9 +20,9 @@ hl.monitor({
     scale    = 2,
 })
 
--- Pantalla interna: 1080p @120Hz, escala 1.25 (~1536x864 logicos)
--- Se apaga al cerrar la tapa si hay un monitor externo conectado;
--- todos los workspaces pasan al externo. Sin externo, logind suspende.
+-- Built-in screen: 1080p @120Hz, scale 1.25 (~1536x864 logical).
+-- Turns off when the lid closes with an external monitor connected, moving
+-- every workspace to the external one. Without one, logind suspends.
 local LAPTOP = "eDP-1"
 
 local function readLidClosed()
@@ -48,7 +48,7 @@ local function applyLaptopMonitor()
     else
         hl.monitor({
             output   = LAPTOP,
-            disabled = false, -- necesario para reactivarla en caliente
+            disabled = false, -- needed to re-enable it while running
             mode     = "1920x1080@120",
             position = "0x0",
             scale    = 1.25,
@@ -60,8 +60,8 @@ applyLaptopMonitor()
 
 hl.bind("switch:on:Lid Switch",  function() lidClosed = true;  applyLaptopMonitor() end, { locked = true })
 hl.bind("switch:off:Lid Switch", function() lidClosed = false; applyLaptopMonitor() end, { locked = true })
--- Re-evaluar al conectar/desconectar monitores (p.ej. desconectar el
--- externo con la tapa cerrada vuelve a encender la interna)
+-- Re-evaluate on monitor hotplug (e.g. unplugging the external monitor
+-- with the lid closed turns the built-in screen back on)
 hl.on("monitor.added",   applyLaptopMonitor)
 hl.on("monitor.removed", applyLaptopMonitor)
 
@@ -93,8 +93,8 @@ hl.env("HYPRCURSOR_SIZE", "24")
 ---- LOOK AND FEEL ----
 -----------------------
 
--- Minimo: sin gaps, bordes finos, sin redondeo ni sombras; blur suave solo
--- para ventanas transparentes (la terminal)
+-- Minimal: no gaps, thin borders, no rounding or shadows; soft blur only
+-- for translucent windows (the terminal)
 hl.config({
     general = {
         gaps_in     = 0,
@@ -114,18 +114,18 @@ hl.config({
         preserve_split = true,
     },
     misc = {
-        force_default_wallpaper = 0,    -- fondo liso, sin wallpapers de Hyprland
+        force_default_wallpaper = 0,    -- plain background, no Hyprland wallpapers
         disable_hyprland_logo   = true,
         disable_splash_rendering = true,
     },
-    -- XWayland: sin escalado por compositor (evita apps borrosas)
+    -- XWayland: no compositor scaling (avoids blurry apps)
     xwayland = {
         force_zero_scaling = true,
     },
 })
 
 
--- Animaciones: todo apagado salvo el deslizamiento al cambiar de escritorio
+-- Animations: everything off except the slide when switching workspaces
 hl.curve("easeOutQuint", { type = "bezier", points = { {0.23, 1}, {0.32, 1} } })
 hl.animation({ leaf = "global",     enabled = false })
 hl.animation({ leaf = "workspaces", enabled = true, speed = 4, bezier = "easeOutQuint", style = "slide" })
@@ -157,29 +157,34 @@ hl.gesture({
 ---- KEYBINDINGS ----
 ---------------------
 
--- Estilo macOS: keyd convierte Alt fisico en Cmd. Las teclas que keyd no
--- traduce a Ctrl (copiar, pegar, etc.) llegan aqui como SUPER.
+-- macOS style: keyd turns physical Alt into Cmd. Cmd keys that keyd does not
+-- translate to Ctrl (copy, paste, etc.) arrive here as SUPER.
 local cmd = "SUPER"
 
 hl.bind(cmd .. " + RETURN",    hl.dsp.exec_cmd(terminal))
-hl.bind(cmd .. " + SPACE",     hl.dsp.exec_cmd(menu))              -- Cmd+Space: lanzador
-hl.bind(cmd .. " + Q",         hl.dsp.window.close())              -- Cmd+Q: cerrar ventana
-hl.bind(cmd .. " + TAB",       hl.dsp.window.cycle_next())         -- Cmd+Tab: siguiente ventana
+hl.bind(cmd .. " + SPACE",     hl.dsp.exec_cmd(menu))              -- Cmd+Space: launcher
+hl.bind(cmd .. " + Q",         hl.dsp.window.close())              -- Cmd+Q: close window
+hl.bind(cmd .. " + TAB",       hl.dsp.window.cycle_next())         -- Cmd+Tab: next window
 hl.bind(cmd .. " + E",         hl.dsp.exec_cmd(fileManager))
 hl.bind(cmd .. " + G",         hl.dsp.window.float({ action = "toggle" }))
 hl.bind(cmd .. " + J",         hl.dsp.layout("togglesplit"))
 hl.bind(cmd .. " + M",         hl.dsp.window.fullscreen())
 hl.bind(cmd .. " + period",    hl.dsp.exec_cmd("pkill -SIGUSR1 waybar"))
+-- Cmd+Ctrl+Q: lock the screen (same shortcut as macOS)
+hl.bind(cmd .. " + CTRL + Q",  hl.dsp.exec_cmd("pidof hyprlock || hyprlock"))
 hl.bind(cmd .. " + SHIFT + Q", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
 
--- Cmd+F3: mostrar escritorio (estilo macOS). Oculta las ventanas del
--- workspace actual en un workspace especial; repetir las devuelve.
+-- Cmd+F3: show desktop (macOS style). Hides the current workspace's windows
+-- in a special workspace; pressing it again brings them back to the active
+-- workspace (workspace ids may have shifted meanwhile, see compaction below).
 local hiddenWindows = {}
 
 local function toggleShowDesktop()
     if #hiddenWindows > 0 then
+        local active = hl.get_active_workspace()
+        local target = active and active.id or 1
         for _, h in ipairs(hiddenWindows) do
-            hl.dispatch(hl.dsp.window.move({ workspace = h.workspace, window = "address:" .. h.address, follow = false }))
+            hl.dispatch(hl.dsp.window.move({ workspace = target, window = "address:" .. h.address, follow = false }))
         end
         hiddenWindows = {}
         return
@@ -187,7 +192,7 @@ local function toggleShowDesktop()
     local ws = hl.get_active_workspace()
     if not ws then return end
     for _, w in ipairs(hl.get_windows({ workspace = ws.id })) do
-        table.insert(hiddenWindows, { address = w.address, workspace = ws.id })
+        table.insert(hiddenWindows, { address = w.address })
         hl.dispatch(hl.dsp.window.move({ workspace = "special:desktop", window = "address:" .. w.address, follow = false }))
     end
 end
@@ -197,10 +202,10 @@ hl.bind(cmd .. " + F3", toggleShowDesktop)
 -- Cmd+Shift+V: clipboard history picker
 hl.bind(cmd .. " + SHIFT + V", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/clipboard-picker.sh"))
 
--- Capturas: se guardan en ~/Pictures/Screenshots y se copian al portapapeles
---   Impr Pant         -> recorte de area (seleccion con el mouse; Esc cancela)
---   Shift + Impr Pant -> pantalla completa (monitor actual)
---   Cmd + Impr Pant   -> ventana activa
+-- Screenshots: saved to ~/Pictures/Screenshots and copied to the clipboard
+--   Print          -> area (select with the mouse; Esc cancels)
+--   Shift + Print  -> full screen (current monitor)
+--   Cmd + Print    -> active window
 local shotDir = os.getenv("HOME") .. "/Pictures/Screenshots"
 
 local function screenshot(mode)
@@ -217,7 +222,7 @@ local function screenshot(mode)
         grim = m and ("grim -o " .. m.name) or "grim"
     end
     hl.exec_cmd(string.format(
-        'mkdir -p "%s" && %s "%s" && wl-copy < "%s" && hyprctl notify 5 2500 0 "Captura guardada y copiada"',
+        'mkdir -p "%s" && %s "%s" && wl-copy < "%s" && hyprctl notify 5 2500 0 "Screenshot saved and copied"',
         shotDir, grim, file, file))
 end
 
@@ -225,25 +230,78 @@ hl.bind("Print",               function() screenshot("area")   end)
 hl.bind("SHIFT + Print",       function() screenshot("screen") end)
 hl.bind(cmd .. " + Print",     function() screenshot("window") end)
 
--- Ctrl+[0-9]: go to workspace; Ctrl+Shift+[0-9]: move window (macOS-style).
+-- Dynamic workspaces: ids always stay 1..N with no gaps. When a workspace
+-- disappears (1 2 4), the ones above it shift down (1 2 3). Numbering is
+-- global across monitors.
+local function normalWorkspaces()
+    local list = {}
+    for _, ws in ipairs(hl.get_workspaces()) do
+        if not ws.special and ws.id > 0 then table.insert(list, ws) end
+    end
+    table.sort(list, function(a, b) return a.id < b.id end)
+    return list
+end
+
+local function compactWorkspaces()
+    -- Ascending order: every lower id is already taken care of, so the
+    -- target id is always free
+    for index, ws in ipairs(normalWorkspaces()) do
+        if ws.id ~= index then
+            hl.dispatch(hl.dsp.workspace.change_id({ workspace = ws.id, id = index }))
+        end
+    end
+end
+
+-- Runs on removal (1 2 4 -> 1 2 3) and on creation (a window opened straight
+-- on workspace 7 while 1-2 exist becomes 3). Deferred so Hyprland finishes the
+-- change before ids are rewritten.
+local function scheduleCompaction()
+    hl.timer(compactWorkspaces, { timeout = 50, type = "oneshot" })
+end
+hl.on("workspace.removed", scheduleCompaction)
+hl.on("workspace.created", scheduleCompaction)
+
+-- Requests beyond the last used workspace land on the next new one, so
+-- Ctrl+7 with workspaces 1-3 goes to 4 instead of leaving a gap
+local function clampWorkspace(requested)
+    local lastUsed = 0
+    for _, ws in ipairs(normalWorkspaces()) do
+        if ws.windows > 0 then lastUsed = math.max(lastUsed, ws.id) end
+    end
+    return math.min(requested, lastUsed + 1)
+end
+
+-- Ctrl+[0-9]: go to workspace; Ctrl+Shift+[0-9]: move window (macOS style).
 -- keyd turns physical Ctrl+N into Super+Ctrl+N, leaving Cmd+N for app tabs.
 for i = 1, 10 do
     local key = i % 10
-    hl.bind("SUPER + CTRL + " .. key,         hl.dsp.focus({ workspace = i }))
-    hl.bind("SUPER + CTRL + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
+    hl.bind("SUPER + CTRL + " .. key, function()
+        hl.dispatch(hl.dsp.focus({ workspace = clampWorkspace(i) }))
+    end)
+    hl.bind("SUPER + CTRL + SHIFT + " .. key, function()
+        hl.dispatch(hl.dsp.window.move({ workspace = clampWorkspace(i) }))
+    end)
 end
 
--- Ctrl+flechas (estilo macOS): keyd convierte el Ctrl fisico + flechas en
--- Super+Ctrl+flechas para no chocar con Option+flechas (que envia Ctrl+flechas)
+-- Ctrl+arrows (macOS style): keyd turns physical Ctrl+arrows into
+-- Super+Ctrl+arrows so they never collide with Option+arrows (sent as Ctrl+arrows)
 hl.bind("SUPER + CTRL + left",  hl.dsp.focus({ workspace = "r-1" }))
 hl.bind("SUPER + CTRL + right", hl.dsp.focus({ workspace = "r+1" }))
+
+-- Option+h/j/k/l: move focus between windows; Option+Shift+h/j/k/l: move the
+-- window. keyd sends the physical Win key (Option) as Alt.
+local directions = { h = "left", j = "down", k = "up", l = "right" }
+for key, direction in pairs(directions) do
+    hl.bind("ALT + " .. key,         hl.dsp.focus({ direction = direction }))
+    hl.bind("ALT + SHIFT + " .. key, hl.dsp.window.move({ direction = direction }))
+end
 
 hl.bind(cmd .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
 hl.bind(cmd .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }))
 hl.bind(cmd .. " + mouse:272",  hl.dsp.window.drag(),   { mouse = true })
 hl.bind(cmd .. " + mouse:273",  hl.dsp.window.resize(), { mouse = true })
 
--- Teclas multimedia
+-- Media keys
 hl.bind("XF86AudioRaiseVolume",  hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })
 hl.bind("XF86AudioLowerVolume",  hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),      { locked = true, repeating = true })
 hl.bind("XF86AudioMute",         hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),     { locked = true })
@@ -267,7 +325,7 @@ hl.window_rule({
 })
 
 hl.window_rule({
-    -- Arregla problemas de arrastre con XWayland
+    -- Fixes XWayland drag issues
     name  = "fix-xwayland-drags",
     match = {
         class      = "^$",
