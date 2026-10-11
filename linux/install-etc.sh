@@ -3,7 +3,13 @@
 # /etc is root-owned, so files are copied (not symlinked). For each file that
 # differs, the diff is shown and nothing is written without confirmation.
 # The previous version is kept as <file>.bak.
+#
+# Usage: install-etc.sh [--yes]   (--yes installs without asking, e.g. when
+# there is no interactive terminal to answer the prompt)
 set -euo pipefail
+
+assume_yes=false
+[ "${1:-}" = "--yes" ] && assume_yes=true
 
 ETC_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/etc"
 
@@ -24,7 +30,12 @@ while IFS= read -r -d '' src; do
     cat "$src"
   fi
 
-  read -r -p "Install $dest? [y/N] " answer
+  if $assume_yes; then
+    answer=y
+  elif ! { read -r -p "Install $dest? [y/N] " answer < /dev/tty; } 2>/dev/null; then
+    echo "No interactive terminal to confirm; re-run with --yes after reviewing the diff above." >&2
+    exit 1
+  fi
   if [[ "$answer" =~ ^[Yy]$ ]]; then
     [ -f "$dest" ] && sudo cp -p "$dest" "$dest.bak"
     sudo install -D -m 644 "$src" "$dest"
