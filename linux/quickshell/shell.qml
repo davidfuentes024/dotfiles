@@ -4,6 +4,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "bar"
+import "notifications"
 
 // Entry point: one bar per monitor
 ShellRoot {
@@ -16,6 +17,8 @@ ShellRoot {
         target: "bar"
         function toggle(): void { shell.barVisible = !shell.barVisible; }
     }
+
+    NotificationPopups {}
 
     Variants {
         model: Quickshell.screens

@@ -51,6 +51,7 @@ PanelWindow {
             NetworkStatus {}
             BluetoothStatus {}
             Volume {}
+            DoNotDisturb {}
             Battery {}
             PowerProfile {}
         }

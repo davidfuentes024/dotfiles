@@ -26,6 +26,8 @@ Singleton {
     readonly property string powerSaver: glyph(0xF032A)
     readonly property string powerBalanced: glyph(0xF05D1)
     readonly property string powerPerformance: glyph(0xF04C5)
+    readonly property string bell: glyph(0xF009A)
+    readonly property string bellOff: glyph(0xF009B)
     readonly property string cpu: glyph(0xF0EE0)
     readonly property string memory: glyph(0xF035B)
     readonly property string temperature: glyph(0xF050F)
