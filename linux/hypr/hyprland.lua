@@ -194,6 +194,9 @@ end
 
 hl.bind(cmd .. " + F3", toggleShowDesktop)
 
+-- Cmd+Shift+V: clipboard history picker
+hl.bind(cmd .. " + SHIFT + V", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/clipboard-picker.sh"))
+
 -- Capturas: se guardan en ~/Pictures/Screenshots y se copian al portapapeles
 --   Impr Pant         -> recorte de area (seleccion con el mouse; Esc cancela)
 --   Shift + Impr Pant -> pantalla completa (monitor actual)
