@@ -79,6 +79,8 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("/usr/lib/hyprpolkitagent/hyprpolkitagent")
     hl.exec_cmd("waybar")
     hl.exec_cmd("mako")
+    -- Per-app keyd overrides (linux/keyd/app.conf); needs the user in the keyd group
+    hl.exec_cmd("keyd-application-mapper -d")
     hl.exec_cmd("wl-paste --type text --watch cliphist store")
     hl.exec_cmd("wl-paste --type image --watch cliphist store")
 end)
@@ -220,11 +222,12 @@ hl.bind("Print",               function() screenshot("area")   end)
 hl.bind("SHIFT + Print",       function() screenshot("screen") end)
 hl.bind(cmd .. " + Print",     function() screenshot("window") end)
 
--- Cmd+[0-9]: ir al workspace; Cmd+Shift+[0-9]: mover ventana
+-- Ctrl+[0-9]: go to workspace; Ctrl+Shift+[0-9]: move window (macOS-style).
+-- keyd turns physical Ctrl+N into Super+Ctrl+N, leaving Cmd+N for app tabs.
 for i = 1, 10 do
     local key = i % 10
-    hl.bind(cmd .. " + " .. key,         hl.dsp.focus({ workspace = i }))
-    hl.bind(cmd .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
+    hl.bind("SUPER + CTRL + " .. key,         hl.dsp.focus({ workspace = i }))
+    hl.bind("SUPER + CTRL + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
 end
 
 -- Ctrl+flechas (estilo macOS): keyd convierte el Ctrl fisico + flechas en

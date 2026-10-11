@@ -41,6 +41,7 @@ link_shared() {
   link "$DOTFILES_DIR/shared/wezterm"    "$HOME/.config/wezterm"
   link "$DOTFILES_DIR/shared/tmux"       "$HOME/.config/tmux"
   link "$DOTFILES_DIR/shared/zsh/zshrc"  "$HOME/.zshrc"
+  link "$DOTFILES_DIR/shared/starship/starship.toml" "$HOME/.config/starship.toml"
   # tmux now loads only from ~/.config/tmux
   unlink_stale "$HOME/.tmux.conf"
 }
@@ -48,6 +49,7 @@ link_shared() {
 link_linux() {
   link "$DOTFILES_DIR/linux/hypr"    "$HOME/.config/hypr"
   link "$DOTFILES_DIR/linux/waybar"  "$HOME/.config/waybar"
+  link "$DOTFILES_DIR/linux/keyd"    "$HOME/.config/keyd"
 }
 
 link_macos() {
@@ -72,4 +74,5 @@ echo "  - Install gitleaks (required by the pre-commit hook)."
 echo "  - Put private env vars in shared/zsh/secrets.zsh (gitignored)."
 if [ "$(uname -s)" = "Linux" ]; then
   echo "  - Run linux/install-etc.sh to review and install system files (needs sudo)."
+  echo "  - Add yourself to the keyd group for per-app keys: sudo usermod -aG keyd \$USER (then log out and back in)."
 fi
