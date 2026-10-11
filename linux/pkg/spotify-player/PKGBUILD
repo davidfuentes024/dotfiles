@@ -1,52 +1,39 @@
-# spotify_player built from source with one fix on its rspotify-model
-# dependency: Spotify sometimes sends `null` for an episode's
-# `is_externally_hosted`, which made every search that included such an
-# episode fail with "invalid type: null, expected a boolean".
-# Drop this package once an upstream release includes the fix.
+# spotify_player from the davidfuentes024/spotify-player fork: upstream
+# v0.25.1 built against rspotify-model with ramsayleung/rspotify#579, which
+# fixes searches failing when Spotify sends `null` for an episode's
+# `is_externally_hosted`. Drop this package (back to spotify-player-bin) once
+# an upstream spotify_player release includes the fix.
 
 pkgname=spotify-player-patched
 _pkgname=spotify-player
 pkgver=0.25.1
-pkgrel=1
-_rspotify_model=0.16.1
+pkgrel=2
+_tag="v${pkgver}-patched.1"
 pkgdesc='A Spotify player in the terminal (with a fix for null episode fields)'
 arch=('x86_64')
-url="https://github.com/aome510/${_pkgname}"
+url="https://github.com/davidfuentes024/${_pkgname}"
 license=('MIT')
 depends=('alsa-lib' 'dbus' 'gcc-libs' 'glibc' 'openssl')
-makedepends=('cargo')
+makedepends=('cargo' 'git')
 # makepkg's LTO turns ring's C code into bitcode the Rust linker cannot read
 options=('!lto')
 provides=("${_pkgname}")
 conflicts=("${_pkgname}" "${_pkgname}-bin")
-source=("${_pkgname}-${pkgver}.tar.gz::${url}/archive/v${pkgver}.tar.gz"
-        "rspotify-model-${_rspotify_model}.tar.gz::https://static.crates.io/crates/rspotify-model/rspotify-model-${_rspotify_model}.crate"
-        "rspotify-model-null-episode-bool.patch")
-sha256sums=('2f9f28e7ea74e14eb3be91d2655dd4666f2821cc58f74ec5db7640580e6a73bb'
-            '84b95fb66a9915464f94c7ce94af7f7b429708583bfd6b612f165f335364a8c5'
-            'c2d5f88a2931215117cef40b54ab4a6e74aa808f2477eb65a042c409be6e18e5')
+source=("${_pkgname}-${_tag}.tar.gz::${url}/archive/${_tag}.tar.gz")
+sha256sums=('11913b1b9d4e6b956ca84bb50f5d3a40d6ce7cafe23e403ec904721b93f18921')
 
 prepare() {
-  patch -d "rspotify-model-${_rspotify_model}" -p1 < rspotify-model-null-episode-bool.patch
-
-  # Build against the patched copy instead of the crates.io one
-  cat >> "${_pkgname}-${pkgver}/Cargo.toml" <<EOF
-
-[patch.crates-io]
-rspotify-model = { path = "../rspotify-model-${_rspotify_model}" }
-EOF
-
-  cd "${_pkgname}-${pkgver}"
-  cargo fetch --target "$(rustc -vV | sed -n 's/host: //p')"
+  cd "${_pkgname}-${_tag#v}"
+  cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
 }
 
 build() {
-  cd "${_pkgname}-${pkgver}"
+  cd "${_pkgname}-${_tag#v}"
   cargo build --frozen --release --bin spotify_player
 }
 
 package() {
-  cd "${_pkgname}-${pkgver}"
+  cd "${_pkgname}-${_tag#v}"
   install -Dm755 target/release/spotify_player "${pkgdir}/usr/bin/spotify_player"
   install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
   install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
