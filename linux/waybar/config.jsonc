@@ -3,7 +3,7 @@
     "layer": "top",
     "position": "top",
     "height": 28,
-    "modules-left": ["hyprland/workspaces", "wlr/taskbar"],
+    "modules-left": ["hyprland/workspaces"],
     "modules-center": ["clock"],
     "modules-right": ["pulseaudio", "bluetooth", "network", "battery"],
 

@@ -146,6 +146,12 @@ hl.config({
     },
 })
 
+hl.config({
+    gestures = {
+        workspace_swipe_create_new = false,
+    },
+})
+
 hl.gesture({
     fingers   = 3,
     direction = "horizontal",
@@ -230,9 +236,16 @@ hl.bind("Print",               function() screenshot("area")   end)
 hl.bind("SHIFT + Print",       function() screenshot("screen") end)
 hl.bind(cmd .. " + Print",     function() screenshot("window") end)
 
--- Dynamic workspaces: ids always stay 1..N with no gaps. When a workspace
--- disappears (1 2 4), the ones above it shift down (1 2 3). Numbering is
--- global across monitors.
+-- Desktops (macOS-style spaces): desktops 1..N always exist, even when
+-- empty, and are only created or deleted explicitly. Ids stay gapless and the
+-- numbering is global across monitors.
+--   Ctrl+Option+N  new desktop at the end
+--   Ctrl+Option+W  delete the current desktop (its windows move to the previous one)
+--   Ctrl+[0-9] / Ctrl+Shift+[0-9]  go to / move window to desktop N (if it exists)
+--   Ctrl+Left/Right                previous / next desktop
+local desktopRules = {}
+local desktopCount = 0
+
 local function normalWorkspaces()
     local list = {}
     for _, ws in ipairs(hl.get_workspaces()) do
@@ -242,51 +255,110 @@ local function normalWorkspaces()
     return list
 end
 
-local function compactWorkspaces()
-    -- Ascending order: every lower id is already taken care of, so the
-    -- target id is always free
-    for index, ws in ipairs(normalWorkspaces()) do
-        if ws.id ~= index then
-            hl.dispatch(hl.dsp.workspace.change_id({ workspace = ws.id, id = index }))
+-- Bars only learn about some changes on reload
+local function refreshBar()
+    hl.exec_cmd("pkill -SIGUSR2 waybar")
+end
+
+local function addDesktop()
+    desktopCount = desktopCount + 1
+    desktopRules[desktopCount] = hl.workspace_rule({ workspace = tostring(desktopCount), persistent = true })
+    return desktopCount
+end
+
+local function removeLastDesktop()
+    desktopRules[desktopCount]:set_enabled(false)
+    desktopRules[desktopCount] = nil
+    desktopCount = desktopCount - 1
+end
+
+-- On (re)load, keep every desktop that already exists
+local highest = 1
+for _, ws in ipairs(normalWorkspaces()) do highest = math.max(highest, ws.id) end
+for _ = 1, highest do addDesktop() end
+
+local function currentDesktop()
+    local ws = hl.get_active_workspace()
+    return ws and ws.id or 1
+end
+
+local function goToDesktop(n)
+    if n >= 1 and n <= desktopCount then
+        hl.dispatch(hl.dsp.focus({ workspace = n }))
+    end
+end
+
+local function newDesktop()
+    goToDesktop(addDesktop())
+    refreshBar()
+end
+
+local function deleteDesktop()
+    if desktopCount <= 1 then return end
+    local current = currentDesktop()
+    if current < 1 or current > desktopCount then return end
+
+    -- Windows of the deleted desktop go to the previous one (or the next one
+    -- when deleting the first); everything above shifts down by one
+    local destination = current > 1 and current - 1 or 1
+    local function moveAll(from, to)
+        for _, w in ipairs(hl.get_windows({ workspace = from })) do
+            hl.dispatch(hl.dsp.window.move({ workspace = to, window = "address:" .. w.address, follow = false }))
         end
     end
-end
-
--- Runs on removal (1 2 4 -> 1 2 3) and on creation (a window opened straight
--- on workspace 7 while 1-2 exist becomes 3). Deferred so Hyprland finishes the
--- change before ids are rewritten.
-local function scheduleCompaction()
-    hl.timer(compactWorkspaces, { timeout = 50, type = "oneshot" })
-end
-hl.on("workspace.removed", scheduleCompaction)
-hl.on("workspace.created", scheduleCompaction)
-
--- Requests beyond the last used workspace land on the next new one, so
--- Ctrl+7 with workspaces 1-3 goes to 4 instead of leaving a gap
-local function clampWorkspace(requested)
-    local lastUsed = 0
-    for _, ws in ipairs(normalWorkspaces()) do
-        if ws.windows > 0 then lastUsed = math.max(lastUsed, ws.id) end
+    if current == 1 then
+        moveAll(2, 1)
+        for id = 3, desktopCount do moveAll(id, id - 1) end
+    else
+        moveAll(current, destination)
+        for id = current + 1, desktopCount do moveAll(id, id - 1) end
     end
-    return math.min(requested, lastUsed + 1)
+
+    removeLastDesktop()
+    goToDesktop(destination)
+    refreshBar()
 end
 
--- Ctrl+[0-9]: go to workspace; Ctrl+Shift+[0-9]: move window (macOS style).
--- keyd turns physical Ctrl+N into Super+Ctrl+N, leaving Cmd+N for app tabs.
+hl.bind("CTRL + ALT + N", newDesktop)
+hl.bind("CTRL + ALT + W", deleteDesktop)
+
+-- Global so bars and scripts can drive desktops: hyprctl eval 'Desktops.new()'
+Desktops = {
+    new    = newDesktop,
+    delete = deleteDesktop,
+    count  = function() return desktopCount end,
+}
+
+-- A workspace that appears beyond the last desktop (e.g. an app opening on
+-- workspace 8) is renumbered to the next desktop instead of leaving a gap
+hl.on("workspace.created", function()
+    hl.timer(function()
+        for _, ws in ipairs(normalWorkspaces()) do
+            if ws.id > desktopCount then
+                local id = addDesktop()
+                if ws.id ~= id then
+                    hl.dispatch(hl.dsp.workspace.change_id({ workspace = ws.id, id = id }))
+                    hl.dispatch(hl.dsp.workspace.rename({ workspace = id, name = tostring(id) }))
+                end
+                refreshBar()
+            end
+        end
+    end, { timeout = 50, type = "oneshot" })
+end)
+
+-- keyd turns physical Ctrl+N into Super+Ctrl+N, leaving Cmd+N for app tabs
 for i = 1, 10 do
     local key = i % 10
-    hl.bind("SUPER + CTRL + " .. key, function()
-        hl.dispatch(hl.dsp.focus({ workspace = clampWorkspace(i) }))
-    end)
+    hl.bind("SUPER + CTRL + " .. key, function() goToDesktop(i) end)
     hl.bind("SUPER + CTRL + SHIFT + " .. key, function()
-        hl.dispatch(hl.dsp.window.move({ workspace = clampWorkspace(i) }))
+        if i <= desktopCount then hl.dispatch(hl.dsp.window.move({ workspace = i })) end
     end)
 end
 
 -- Ctrl+arrows (macOS style): keyd turns physical Ctrl+arrows into
 -- Super+Ctrl+arrows so they never collide with Option+arrows (sent as Ctrl+arrows)
-hl.bind("SUPER + CTRL + left",  hl.dsp.focus({ workspace = "r-1" }))
-hl.bind("SUPER + CTRL + right", hl.dsp.focus({ workspace = "r+1" }))
+hl.bind("SUPER + CTRL + left",  function() goToDesktop(currentDesktop() - 1) end)
+hl.bind("SUPER + CTRL + right", function() goToDesktop(currentDesktop() + 1) end)
 
 -- Option+h/j/k/l: move focus between windows; Option+Shift+h/j/k/l: move the
 -- window. keyd sends the physical Win key (Option) as Alt.
