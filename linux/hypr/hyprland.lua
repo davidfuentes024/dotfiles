@@ -243,6 +243,20 @@ hl.bind(cmd .. " + F3", toggleShowDesktop)
 hl.bind(cmd .. " + SHIFT + L", hl.dsp.exec_cmd("qs ipc call lyrics toggle"))
 hl.bind(cmd .. " + SHIFT + K", hl.dsp.exec_cmd("qs ipc call lyrics edit"))
 
+-- Cmd+Shift+M: ncspot (Spotify) as a scratchpad. It lives in the special
+-- workspace "music", so hiding it keeps the music playing.
+local function toggleMusic()
+    local running = false
+    for _, w in ipairs(hl.get_windows()) do
+        if w.class == "ncspot" then running = true break end
+    end
+    if not running then
+        hl.exec_cmd("wezterm start --class ncspot -- ncspot")
+    end
+    hl.dispatch(hl.dsp.workspace.toggle_special("music"))
+end
+hl.bind(cmd .. " + SHIFT + M", toggleMusic)
+
 -- Cmd+Shift+V: launcher in clipboard history mode
 hl.bind(cmd .. " + SHIFT + V", hl.dsp.exec_cmd("qs ipc call launcher open clipboard"))
 
@@ -398,17 +412,22 @@ Desktops = {
 }
 
 -- A workspace that appears beyond the last desktop (e.g. an app opening on
--- workspace 8) is renumbered to the next desktop instead of leaving a gap
+-- workspace 8) is renumbered to the next desktop instead of leaving a gap.
+-- It is renumbered first and only then made a desktop, one per event: adding
+-- the rule first created that workspace, the renumbering then failed, and every
+-- new workspace re-triggered this handler (it once grew to 145 desktops).
 hl.on("workspace.created", function()
     hl.timer(function()
         for _, ws in ipairs(normalWorkspaces()) do
             if ws.id > desktopCount then
-                local id = addDesktop()
-                saveCount()
-                if ws.id ~= id then
-                    hl.dispatch(hl.dsp.workspace.change_id({ workspace = ws.id, id = id }))
-                    hl.dispatch(hl.dsp.workspace.rename({ workspace = id, name = tostring(id) }))
+                local target = desktopCount + 1
+                if ws.id ~= target then
+                    hl.dispatch(hl.dsp.workspace.change_id({ workspace = ws.id, id = target }))
+                    hl.dispatch(hl.dsp.workspace.rename({ workspace = target, name = tostring(target) }))
                 end
+                addDesktop()
+                saveCount()
+                return
             end
         end
     end, { timeout = 50, type = "oneshot" })
@@ -490,6 +509,16 @@ hl.layer_rule({
     match = { namespace = "^lyrics$" },
     blur  = true,
     ignore_alpha = 0.1,
+})
+
+-- ncspot opens straight into its scratchpad (Cmd+Shift+M)
+hl.window_rule({
+    name      = "music-scratchpad",
+    match     = { class = "^ncspot$" },
+    workspace = "special:music silent",
+    float     = true,
+    size      = { 1100, 700 },
+    center    = true,
 })
 
 -- btop (opened from the bar's usage summary) as a centered floating window
