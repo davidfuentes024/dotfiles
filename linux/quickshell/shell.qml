@@ -7,6 +7,7 @@ import "bar"
 import "notifications"
 import "osd"
 import "launcher"
+import "lyrics"
 
 // Entry point: one bar per monitor
 ShellRoot {
@@ -23,6 +24,7 @@ ShellRoot {
     NotificationPopups {}
     Osd {}
     Launcher {}
+    LyricsOverlay {}
 
     Variants {
         model: Quickshell.screens

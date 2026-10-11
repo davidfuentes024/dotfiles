@@ -16,6 +16,7 @@ PanelWindow {
     color: Theme.bg
 
     RowLayout {
+        id: layout
         anchors.fill: parent
         anchors.leftMargin: 4
         anchors.rightMargin: 12
@@ -36,7 +37,9 @@ PanelWindow {
             }
         }
 
-        Clock {}
+        Clock {
+            id: clock
+        }
 
         RowLayout {
             Layout.fillWidth: true
@@ -55,5 +58,11 @@ PanelWindow {
             Battery {}
             PowerProfile {}
         }
+    }
+
+    // Outside the layout, just right of the clock, so it never shifts the clock
+    MediaWidget {
+        x: layout.x + clock.x + clock.width + 16
+        anchors.verticalCenter: parent.verticalCenter
     }
 }

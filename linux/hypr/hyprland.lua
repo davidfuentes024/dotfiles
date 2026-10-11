@@ -239,6 +239,10 @@ end
 
 hl.bind(cmd .. " + F3", toggleShowDesktop)
 
+-- Cmd+Shift+L: show/hide synced lyrics; Cmd+Shift+K: move/resize them
+hl.bind(cmd .. " + SHIFT + L", hl.dsp.exec_cmd("qs ipc call lyrics toggle"))
+hl.bind(cmd .. " + SHIFT + K", hl.dsp.exec_cmd("qs ipc call lyrics edit"))
+
 -- Cmd+Shift+V: launcher in clipboard history mode
 hl.bind(cmd .. " + SHIFT + V", hl.dsp.exec_cmd("qs ipc call launcher open clipboard"))
 
@@ -477,6 +481,15 @@ hl.window_rule({
         pin        = false,
     },
     no_focus = true,
+})
+
+-- Blur behind the translucent lyrics box. The lyrics layer covers the whole
+-- screen; ignore_alpha limits the blur to its visible part (the box).
+hl.layer_rule({
+    name  = "blur-lyrics",
+    match = { namespace = "^lyrics$" },
+    blur  = true,
+    ignore_alpha = 0.1,
 })
 
 -- btop (opened from the bar's usage summary) as a centered floating window
