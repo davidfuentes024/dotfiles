@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Installs the system files kept under linux/etc into /etc.
+# /etc is root-owned, so files are copied (not symlinked). For each file that
+# differs, the diff is shown and nothing is written without confirmation.
+# The previous version is kept as <file>.bak.
+set -euo pipefail
+
+ETC_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/etc"
+
+while IFS= read -r -d '' src; do
+  rel="${src#"$ETC_SRC"/}"
+  dest="/etc/$rel"
+
+  if [ -f "$dest" ] && cmp -s "$src" "$dest"; then
+    echo "Up to date: $dest"
+    continue
+  fi
+
+  echo "=== $dest ==="
+  if [ -f "$dest" ]; then
+    diff -u "$dest" "$src" || true
+  else
+    echo "(new file)"
+    cat "$src"
+  fi
+
+  read -r -p "Install $dest? [y/N] " answer
+  if [[ "$answer" =~ ^[Yy]$ ]]; then
+    [ -f "$dest" ] && sudo cp -p "$dest" "$dest.bak"
+    sudo install -D -m 644 "$src" "$dest"
+    echo "Installed: $dest"
+  else
+    echo "Skipped: $dest"
+  fi
+done < <(find "$ETC_SRC" -type f -print0)
+
+echo
+echo "Reminder: some services need a restart to pick up changes (e.g. sudo systemctl restart keyd)."

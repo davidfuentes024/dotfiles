@@ -15,13 +15,6 @@ source "$ZSH/oh-my-zsh.sh"
 
 
 # ============================================================
-# HOMEBREW
-# ============================================================
-
-[ -x /opt/homebrew/bin/brew ] && eval "$(/opt/homebrew/bin/brew shellenv)"
-
-
-# ============================================================
 # PATH
 # ============================================================
 
@@ -149,7 +142,16 @@ bg() {
 
 
 # ============================================================
-# STM32
+# OS-SPECIFIC AND PRIVATE CONFIG
 # ============================================================
 
-export STM32CUBEMX_PATH="/Applications/STMicroelectronics/STM32CubeMX.app/Contents/Resources"
+# Resolve the repo root through the ~/.zshrc symlink (shared/zsh/zshrc -> repo)
+DOTFILES_DIR="${${(%):-%N}:A:h:h:h}"
+
+case "$OSTYPE" in
+  darwin*) [ -f "$DOTFILES_DIR/macos/zsh/macos.zsh" ] && source "$DOTFILES_DIR/macos/zsh/macos.zsh" ;;
+  linux*)  [ -f "$DOTFILES_DIR/linux/zsh/linux.zsh" ] && source "$DOTFILES_DIR/linux/zsh/linux.zsh" ;;
+esac
+
+# Machine-local secrets (tokens, API keys). Gitignored: never commit it.
+[ -f "$DOTFILES_DIR/shared/zsh/secrets.zsh" ] && source "$DOTFILES_DIR/shared/zsh/secrets.zsh"

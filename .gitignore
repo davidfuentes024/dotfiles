@@ -1,8 +1,22 @@
-# Fondo de WezTerm: personal/pesado, no viaja con el repo.
-# wezterm.lua cae al color del tema si no lo encuentra.
-wezterm/*.jpg
-wezterm/*.jpeg
-wezterm/*.png
+# WezTerm background image: personal/heavy, not tracked.
+# wezterm.lua falls back to the theme color when it is missing.
+shared/wezterm/*.jpg
+shared/wezterm/*.jpeg
+shared/wezterm/*.png
 
-# Plugins de tmux (tpm los clona solos con prefix + I)
-tmux/plugins/
+# tmux plugins (tpm clones them with prefix + I)
+shared/tmux/plugins/
+
+# Secrets and machine-local overrides: never commit
+shared/zsh/secrets.zsh
+*.env
+.env*
+*secret*
+*.local.*
+*.pem
+*.key
+id_rsa*
+id_ed25519*
+
+# Backups left by install scripts
+*.bak
