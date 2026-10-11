@@ -16,7 +16,30 @@ config.font_size = 13.0
 -- TEMA
 -- ============================================================
 
-config.color_scheme = 'Catppuccin Mocha'
+-- One Dark Pro "Darker" (VS Code theme palette). Defined inline because
+-- WezTerm's bundled One Dark variants use the lighter, bluer #282c34 background.
+config.color_schemes = {
+  ['One Dark Pro Darker'] = {
+    foreground = '#abb2bf',
+    background = '#23272e',
+    cursor_bg = '#528bff',
+    cursor_fg = '#23272e',
+    cursor_border = '#528bff',
+    selection_bg = '#3e4451',
+    selection_fg = '#abb2bf',
+    split = '#3e4451',
+    ansi = {
+      '#3f4451', '#e05561', '#8cc265', '#d18f52',
+      '#4aa5f0', '#c162de', '#42b3c2', '#d7dae0',
+    },
+    brights = {
+      '#4f5666', '#ff616e', '#a5e075', '#f0a45d',
+      '#4dc4ff', '#de73ff', '#4cd1e0', '#e6e6e6',
+    },
+  },
+}
+
+config.color_scheme = 'One Dark Pro Darker'
 
 
 -- ============================================================
