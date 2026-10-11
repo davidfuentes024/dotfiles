@@ -268,18 +268,26 @@ hl.bind(cmd .. " + F3", toggleShowDesktop)
 hl.bind(cmd .. " + SHIFT + L", hl.dsp.exec_cmd("qs ipc call lyrics toggle"))
 hl.bind(cmd .. " + SHIFT + K", hl.dsp.exec_cmd("qs ipc call lyrics edit"))
 
--- Cmd+Shift+M: ncspot (Spotify) as a scratchpad. It lives in the special
+-- Cmd+Shift+M: spotify_player (Spotify in the terminal) as a scratchpad. It lives in the special
 -- workspace "music", so hiding it keeps the music playing.
 local function toggleMusic()
     local running = false
     for _, w in ipairs(hl.get_windows()) do
-        if w.class == "ncspot" then running = true break end
+        if w.class == "spotify_player" then running = true break end
     end
     if not running then
-        hl.exec_cmd("wezterm start --class ncspot -- ncspot")
+        hl.exec_cmd("wezterm start --class spotify_player -- spotify_player")
     end
     hl.dispatch(hl.dsp.workspace.toggle_special("music"))
 end
+
+-- On the first open the scratchpad is shown before the window exists, so the
+-- window gets the keyboard focus as soon as it appears
+hl.on("window.open", function(w)
+    if w and w.class == "spotify_player" then
+        hl.dispatch(hl.dsp.focus({ window = "address:" .. w.address }))
+    end
+end)
 hl.bind(cmd .. " + SHIFT + M", toggleMusic)
 
 -- Cmd+Shift+V: launcher in clipboard history mode
@@ -536,11 +544,11 @@ hl.layer_rule({
     ignore_alpha = 0.1,
 })
 
--- ncspot opens straight into its scratchpad (Cmd+Shift+M)
+-- spotify_player opens straight into its scratchpad (Cmd+Shift+M)
 hl.window_rule({
     name      = "music-scratchpad",
-    match     = { class = "^ncspot$" },
-    workspace = "special:music silent",
+    match     = { class = "^spotify_player$" },
+    workspace = "special:music",
     float     = true,
     size      = { 1100, 700 },
     center    = true,

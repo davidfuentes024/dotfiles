@@ -43,6 +43,10 @@ link_shared() {
   link "$DOTFILES_DIR/shared/zsh/zshrc"  "$HOME/.zshrc"
   link "$DOTFILES_DIR/shared/starship/starship.toml" "$HOME/.config/starship.toml"
   link "$DOTFILES_DIR/shared/themes"     "$HOME/.config/themes"
+  # Only these two are linked: the folder also holds the private client_id and
+  # the generated theme.toml
+  link "$DOTFILES_DIR/shared/spotify-player/app.toml"    "$HOME/.config/spotify-player/app.toml"
+  link "$DOTFILES_DIR/shared/spotify-player/keymap.toml" "$HOME/.config/spotify-player/keymap.toml"
   # tmux now loads only from ~/.config/tmux
   unlink_stale "$HOME/.tmux.conf"
 }

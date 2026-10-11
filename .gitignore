@@ -18,5 +18,11 @@ shared/zsh/secrets.zsh
 id_rsa*
 id_ed25519*
 
+# makepkg build output for local packages (linux/pkg/*)
+linux/pkg/*/src/
+linux/pkg/*/pkg/
+linux/pkg/*/*.tar.gz
+linux/pkg/*/*.pkg.tar.zst
+
 # Backups left by install scripts
 *.bak
