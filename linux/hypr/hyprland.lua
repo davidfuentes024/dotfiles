@@ -72,7 +72,7 @@ hl.on("monitor.removed", applyLaptopMonitor)
 
 local terminal    = "wezterm"
 local fileManager = "wezterm start -- yazi"
-local menu        = "hyprlauncher"
+local menu        = "qs ipc call launcher toggle"  -- Quickshell launcher
 
 hl.on("hyprland.start", function ()
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE HYPRLAND_INSTANCE_SIGNATURE")
@@ -239,8 +239,8 @@ end
 
 hl.bind(cmd .. " + F3", toggleShowDesktop)
 
--- Cmd+Shift+V: clipboard history picker
-hl.bind(cmd .. " + SHIFT + V", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/clipboard-picker.sh"))
+-- Cmd+Shift+V: launcher in clipboard history mode
+hl.bind(cmd .. " + SHIFT + V", hl.dsp.exec_cmd("qs ipc call launcher open clipboard"))
 
 -- Screenshots: saved to ~/Pictures/Screenshots and copied to the clipboard
 --   Print          -> area (select with the mouse; Esc cancels)
