@@ -1,0 +1,5 @@
+# Deep black: higher contrast for neon accents
+bg = "#121212"
+bg_alt = "#1a1a1a"
+surface = "#242424"
+overlay = "#333333"
