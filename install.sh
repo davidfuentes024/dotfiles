@@ -54,6 +54,9 @@ link_shared() {
 link_linux() {
   link "$DOTFILES_DIR/linux/hypr"    "$HOME/.config/hypr"
   link "$DOTFILES_DIR/linux/keyd"    "$HOME/.config/keyd"
+  link "$DOTFILES_DIR/linux/systemd/keyd-application-mapper.service" \
+       "$HOME/.config/systemd/user/keyd-application-mapper.service"
+  command -v systemctl >/dev/null && systemctl --user daemon-reload
   link "$DOTFILES_DIR/linux/quickshell" "$HOME/.config/quickshell"
 }
 

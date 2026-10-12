@@ -78,8 +78,9 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE HYPRLAND_INSTANCE_SIGNATURE")
     hl.exec_cmd("/usr/lib/hyprpolkitagent/hyprpolkitagent")
     hl.exec_cmd("qs")  -- Quickshell: bar and the rest of the desktop shell
-    -- Per-app keyd overrides (linux/keyd/app.conf); needs the user in the keyd group
-    hl.exec_cmd("keyd-application-mapper -d")
+    -- Per-app keyd overrides (linux/keyd/app.conf); needs the user in the keyd
+    -- group. A systemd user service, so it comes back if it ever dies.
+    hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY && systemctl --user restart keyd-application-mapper")
     hl.exec_cmd("wl-paste --type text --watch cliphist store")
     hl.exec_cmd("wl-paste --type image --watch cliphist store")
 end)
