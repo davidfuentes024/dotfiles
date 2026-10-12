@@ -245,11 +245,112 @@ hl.bind("ALT + TAB",           hl.dsp.window.cycle_next())         -- Alt+Tab: w
 hl.bind(cmd .. " + E",         hl.dsp.exec_cmd(fileManager))
 hl.bind(cmd .. " + G",         hl.dsp.window.float({ action = "toggle" }))
 hl.bind(cmd .. " + J",         hl.dsp.layout("togglesplit"))
-hl.bind(cmd .. " + M",         hl.dsp.window.fullscreen())
+hl.bind(cmd .. " + CTRL + F",  hl.dsp.window.fullscreen())         -- Cmd+Ctrl+F: fullscreen (macOS)
 hl.bind(cmd .. " + period",    hl.dsp.exec_cmd("qs ipc call bar toggle"))
 -- Cmd+Ctrl+Q: lock the screen (same shortcut as macOS)
 hl.bind(cmd .. " + CTRL + Q",  hl.dsp.exec_cmd("pidof hyprlock || hyprlock"))
 hl.bind(cmd .. " + SHIFT + Q", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
+
+-- Window management (macOS / Rectangle style), for any window: a maximized one
+-- is restored first and a tiled one becomes floating (Cmd+G puts it back in
+-- the tiling). Cmd+Option combos need the [cmd+opt] layer in keyd, since
+-- Cmd+arrows and Option+arrows already move the text cursor in apps.
+--   Cmd+Option+arrows  half of the screen
+--   Cmd+Option+Enter   maximize, keeping the bar / restore
+--   Cmd+Option+C       center
+--   Cmd+Option+= / -   bigger / smaller, keeping the center
+--   Cmd+M              minimize; restore from the bar's minimized list
+
+-- Area of the focused monitor not covered by bars, in layout coordinates
+local function usableArea()
+    local m = hl.get_active_monitor()
+    if not m then return nil end
+    local r = m.reserved or {}
+    local top, bottom = r.top or 0, r.bottom or 0
+    local left, right = r.left or 0, r.right or 0
+    return {
+        x = m.x + left,
+        y = m.y + top,
+        w = m.width / m.scale - left - right,
+        h = m.height / m.scale - top - bottom,
+    }
+end
+
+-- Puts the window at an exact position and size; any window can take this
+local function placeWindow(w, x, y, width, height)
+    local target = "address:" .. w.address
+    -- Hyprland ignores moves and resizes while maximized or fullscreen
+    if (w.fullscreen or 0) ~= 0 then
+        hl.dispatch(hl.dsp.window.fullscreen({ mode = w.fullscreen == 1 and "maximized" or "fullscreen", action = "unset", window = target }))
+    end
+    if not w.floating then
+        hl.dispatch(hl.dsp.window.float({ action = "enable", window = target }))
+    end
+    hl.dispatch(hl.dsp.window.resize({ x = math.floor(width), y = math.floor(height), window = target }))
+    hl.dispatch(hl.dsp.window.move({ x = math.floor(x), y = math.floor(y), window = target }))
+end
+
+local function snapWindow(side)
+    local w, a = hl.get_active_window(), usableArea()
+    if not w or not a then return end
+    local rect = ({
+        left  = { a.x,           a.y,           a.w / 2, a.h },
+        right = { a.x + a.w / 2, a.y,           a.w / 2, a.h },
+        up    = { a.x,           a.y,           a.w,     a.h / 2 },
+        down  = { a.x,           a.y + a.h / 2, a.w,     a.h / 2 },
+    })[side]
+    placeWindow(w, rect[1], rect[2], rect[3], rect[4])
+end
+
+local function centerWindow()
+    local w, a = hl.get_active_window(), usableArea()
+    if not w or not a then return end
+    -- A floating window keeps its size; anything else gets a comfortable one
+    local width, height = a.w * 0.7, a.h * 0.75
+    if w.floating and (w.fullscreen or 0) == 0 then width, height = w.size.x, w.size.y end
+    placeWindow(w, a.x + (a.w - width) / 2, a.y + (a.h - height) / 2, width, height)
+end
+
+-- Grows (step > 0) or shrinks the window around its center, within the screen
+local function resizeWindow(step)
+    local w, a = hl.get_active_window(), usableArea()
+    if not w or not a then return end
+    local width = math.max(320, math.min(a.w, w.size.x + step * 60))
+    local height = math.max(200, math.min(a.h, w.size.y + step * 40))
+    local cx, cy = w.at.x + w.size.x / 2, w.at.y + w.size.y / 2
+    local x = math.max(a.x, math.min(a.x + a.w - width, cx - width / 2))
+    local y = math.max(a.y, math.min(a.y + a.h - height, cy - height / 2))
+    placeWindow(w, x, y, width, height)
+end
+
+local function minimizeWindow()
+    if not hl.get_active_window() then return end
+    hl.dispatch(hl.dsp.window.move({ workspace = "special:minimized", follow = false }))
+end
+
+-- Brings a minimized window back to the current desktop. Global so the bar's
+-- minimized list can call it: hyprctl eval 'Windows.restore("0x...")'
+Windows = {
+    snap = snapWindow,
+    center = centerWindow,
+    resize = resizeWindow,
+    minimize = minimizeWindow,
+    restore = function(address)
+        local ws = hl.get_active_workspace()
+        local target = "address:" .. address
+        hl.dispatch(hl.dsp.window.move({ workspace = ws and ws.id or 1, window = target, follow = false }))
+        hl.dispatch(hl.dsp.focus({ window = target }))
+    end,
+}
+
+for side, key in pairs({ left = "left", right = "right", up = "up", down = "down" }) do
+    hl.bind(cmd .. " + ALT + " .. key, function() snapWindow(side) end)
+end
+hl.bind(cmd .. " + ALT + RETURN", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }))
+hl.bind(cmd .. " + ALT + C",      centerWindow)
+hl.bind(cmd .. " + ALT + equal",  function() resizeWindow(1) end,  { repeating = true })
+hl.bind(cmd .. " + ALT + minus",  function() resizeWindow(-1) end, { repeating = true })
+hl.bind(cmd .. " + M",            minimizeWindow)
 
 -- Cmd+F3: show desktop (macOS style). Hides the current workspace's windows
 -- in a special workspace; pressing it again brings them back to the active

@@ -41,6 +41,7 @@ Singleton {
     readonly property string bellOff: glyph(0xF009B)
     readonly property string search: glyph(0xF0349)
     readonly property string note: glyph(0xF039A)
+    readonly property string minimized: glyph(0xF05B0)
     readonly property string trash: glyph(0xF0A7A)
     readonly property string application: glyph(0xF0614)
     readonly property string calculator: glyph(0xF00EC)
