@@ -186,6 +186,19 @@ hl.config({
     },
 })
 
+-- 3-finger swipe up / down: open / close the desktop overview (Mission
+-- Control style); sideways it switches desktops
+hl.gesture({
+    fingers   = 3,
+    direction = "up",
+    action    = function() hl.exec_cmd("qs ipc call overview open") end,
+})
+hl.gesture({
+    fingers   = 3,
+    direction = "down",
+    action    = function() hl.exec_cmd("qs ipc call overview close") end,
+})
+
 hl.gesture({
     fingers   = 3,
     direction = "horizontal",
@@ -557,15 +570,20 @@ Desktops = {
     count  = function() return desktopCount end,
 }
 
--- A workspace that appears beyond the last desktop (e.g. an app opening on
--- workspace 8) is renumbered to the next desktop instead of leaving a gap.
--- It is renumbered first and only then made a desktop, one per event: adding
--- the rule first created that workspace, the renumbering then failed, and every
--- new workspace re-triggered this handler (it once grew to 145 desktops).
+-- A workspace that appears beyond the last desktop WITH WINDOWS (e.g. an app
+-- opening on workspace 8) is renumbered to the next desktop instead of leaving
+-- a gap. Empty ones are left alone: Hyprland creates one for every monitor
+-- that turns on (opening the lid), and adopting it made Hyprland create
+-- another, in a loop (it reached 145 and later 101 desktops). The cooldown
+-- also ignores the events caused by our own renumbering.
+local adoptCooldownUntil = 0
+
 hl.on("workspace.created", function()
     hl.timer(function()
+        if os.time() < adoptCooldownUntil then return end
         for _, ws in ipairs(normalWorkspaces()) do
-            if ws.id > desktopCount then
+            if ws.id > desktopCount and ws.windows > 0 then
+                adoptCooldownUntil = os.time() + 2
                 local target = desktopCount + 1
                 if ws.id ~= target then
                     hl.dispatch(hl.dsp.workspace.change_id({ workspace = ws.id, id = target }))
@@ -594,6 +612,10 @@ end
 
 -- Ctrl+arrows (macOS style): keyd turns physical Ctrl+arrows into
 -- Super+Ctrl+arrows so they never collide with Option+arrows (sent as Ctrl+arrows)
+-- Ctrl+Up / Ctrl+Down: open / close the desktop overview (macOS Mission
+-- Control); keyd sends them as Super+Ctrl+Up / Down
+hl.bind("SUPER + CTRL + up",   hl.dsp.exec_cmd("qs ipc call overview open"))
+hl.bind("SUPER + CTRL + down", hl.dsp.exec_cmd("qs ipc call overview close"))
 hl.bind("SUPER + CTRL + left",  function() goToDesktop(currentDesktop() - 1) end)
 hl.bind("SUPER + CTRL + right", function() goToDesktop(currentDesktop() + 1) end)
 
@@ -674,6 +696,13 @@ hl.window_rule({
     float  = true,
     size   = { 920, 600 },
     center = true,
+})
+
+-- Blur behind the desktop overview
+hl.layer_rule({
+    name  = "blur-overview",
+    match = { namespace = "^overview$" },
+    blur  = true,
 })
 
 -- btop (opened from the bar's usage summary) as a centered floating window

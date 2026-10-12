@@ -30,9 +30,11 @@ Alt, so none of the shortcuts below fire there, except Ctrl+arrows and Alt+Tab.
 
 | Key | Action |
 | --- | --- |
+| Ctrl+Up or 3-finger swipe up | Overview of every desktop with live window previews: click a window or desktop to go there, `+` for a new one, 1-9 to jump |
+| Ctrl+Down, 3-finger swipe down or Esc | Close the overview |
 | Ctrl+1..9 | Go to desktop N (created if it does not exist) |
 | Ctrl+Shift+1..9 | Move the window to desktop N |
-| Ctrl+Left / Right | Previous / next desktop (also a 3-finger swipe) |
+| Ctrl+Left / Right | Previous / next desktop (also a 3-finger swipe sideways) |
 | Ctrl+Option+N | New desktop at the end |
 | Ctrl+Q or Ctrl+Option+W | Delete the current desktop (its windows go to the previous one) |
 | Cmd+F3 | Show the desktop (hide its windows; again to bring them back) |
