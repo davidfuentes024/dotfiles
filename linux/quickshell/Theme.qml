@@ -50,10 +50,20 @@ Singleton {
         return values;
     }
 
-    FileView { id: nameFile; path: root.stateDir + "/name"; watchChanges: true; onFileChanged: reload() }
-    FileView { id: blackFile; path: root.stateDir + "/black"; watchChanges: true; onFileChanged: reload() }
-    FileView { id: fontFile; path: root.stateDir + "/font"; watchChanges: true; onFileChanged: reload() }
-    FileView { id: paletteFile; path: root.themesDir + "/palettes/" + root.themeName + ".toml"; watchChanges: true; onFileChanged: reload() }
-    FileView { id: blackFile2; path: root.themesDir + "/blacks/" + root.blackName + ".toml"; watchChanges: true; onFileChanged: reload() }
-    FileView { id: fontSpecFile; path: root.themesDir + "/fonts/" + root.fontName + ".toml"; watchChanges: true; onFileChanged: reload() }
+    // A file can vanish for a moment (e.g. git switching branches); retry so
+    // the shell does not stay on the fallback colors
+    Timer {
+        id: retry
+        interval: 1000
+        onTriggered: {
+            for (const file of [nameFile, blackFile, fontFile, paletteFile, blackFile2, fontSpecFile]) file.reload();
+        }
+    }
+
+    FileView { id: nameFile; path: root.stateDir + "/name"; watchChanges: true; onFileChanged: reload(); onLoadFailed: retry.restart() }
+    FileView { id: blackFile; path: root.stateDir + "/black"; watchChanges: true; onFileChanged: reload(); onLoadFailed: retry.restart() }
+    FileView { id: fontFile; path: root.stateDir + "/font"; watchChanges: true; onFileChanged: reload(); onLoadFailed: retry.restart() }
+    FileView { id: paletteFile; path: root.themesDir + "/palettes/" + root.themeName + ".toml"; watchChanges: true; onFileChanged: reload(); onLoadFailed: retry.restart() }
+    FileView { id: blackFile2; path: root.themesDir + "/blacks/" + root.blackName + ".toml"; watchChanges: true; onFileChanged: reload(); onLoadFailed: retry.restart() }
+    FileView { id: fontSpecFile; path: root.themesDir + "/fonts/" + root.fontName + ".toml"; watchChanges: true; onFileChanged: reload(); onLoadFailed: retry.restart() }
 }

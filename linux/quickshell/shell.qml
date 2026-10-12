@@ -8,6 +8,8 @@ import "notifications"
 import "osd"
 import "launcher"
 import "qs-music"
+import "notes"
+import "overview"
 
 // Entry point: one bar per monitor
 ShellRoot {
@@ -24,6 +26,8 @@ ShellRoot {
     NotificationPopups {}
     Osd {}
     Launcher {}
+    Notes {}
+    Overview {}
     // qs-music (synced lyrics); its colors and font follow the active theme
     LyricsOverlay {}
     Binding { target: MusicStyle; property: "bg"; value: Theme.bg }

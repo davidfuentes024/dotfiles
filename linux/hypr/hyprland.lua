@@ -78,8 +78,9 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE HYPRLAND_INSTANCE_SIGNATURE")
     hl.exec_cmd("/usr/lib/hyprpolkitagent/hyprpolkitagent")
     hl.exec_cmd("qs")  -- Quickshell: bar and the rest of the desktop shell
-    -- Per-app keyd overrides (linux/keyd/app.conf); needs the user in the keyd group
-    hl.exec_cmd("keyd-application-mapper -d")
+    -- Per-app keyd overrides (linux/keyd/app.conf); needs the user in the keyd
+    -- group. A systemd user service, so it comes back if it ever dies.
+    hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY && systemctl --user restart keyd-application-mapper")
     hl.exec_cmd("wl-paste --type text --watch cliphist store")
     hl.exec_cmd("wl-paste --type image --watch cliphist store")
 end)
@@ -185,6 +186,19 @@ hl.config({
     },
 })
 
+-- 3-finger swipe up / down: open / close the desktop overview (Mission
+-- Control style); sideways it switches desktops
+hl.gesture({
+    fingers   = 3,
+    direction = "up",
+    action    = function() hl.exec_cmd("qs ipc call overview open") end,
+})
+hl.gesture({
+    fingers   = 3,
+    direction = "down",
+    action    = function() hl.exec_cmd("qs ipc call overview close") end,
+})
+
 hl.gesture({
     fingers   = 3,
     direction = "horizontal",
@@ -203,13 +217,19 @@ local cmd = "SUPER"
 -- Cmd+Q quits the whole app like macOS. Closing the window is not enough:
 -- tray apps (Discord, Steam, Spotify...) just hide and keep running. SIGTERM
 -- (not SIGKILL) still lets the app save its state and exit cleanly.
--- Exception: every WezTerm window shares one process, so killing it would take
--- all terminals down with no prompt. There Cmd+Q only closes the focused
--- window, which goes through WezTerm's close confirmation.
+-- Exception: apps whose windows share one process with more than that window.
+-- All WezTerm windows are one process, and Quickshell windows (e.g. Notes) are
+-- the desktop shell itself (bar, notifications, launcher). Killing them would
+-- take everything down, so Cmd+Q only closes the focused window there.
+local sharedProcessApps = {
+    ["org.wezfurlong.wezterm"] = true,
+    ["org.quickshell"] = true,
+}
+
 local function quitActiveApp()
     local w = hl.get_active_window()
     if not w or not w.pid or w.pid <= 1 then return end
-    if w.class == "org.wezfurlong.wezterm" then
+    if sharedProcessApps[w.class] then
         hl.dispatch(hl.dsp.window.close())
         return
     end
@@ -221,6 +241,11 @@ end
 local function forceQuitActiveApp()
     local w = hl.get_active_window()
     if not w or not w.pid or w.pid <= 1 then return end
+    -- Never the shell: that would kill the bar and everything with it
+    if w.class == "org.quickshell" then
+        hl.dispatch(hl.dsp.window.close())
+        return
+    end
     hl.exec_cmd("kill -KILL " .. w.pid)
 end
 
@@ -233,11 +258,112 @@ hl.bind("ALT + TAB",           hl.dsp.window.cycle_next())         -- Alt+Tab: w
 hl.bind(cmd .. " + E",         hl.dsp.exec_cmd(fileManager))
 hl.bind(cmd .. " + G",         hl.dsp.window.float({ action = "toggle" }))
 hl.bind(cmd .. " + J",         hl.dsp.layout("togglesplit"))
-hl.bind(cmd .. " + M",         hl.dsp.window.fullscreen())
+hl.bind(cmd .. " + CTRL + F",  hl.dsp.window.fullscreen())         -- Cmd+Ctrl+F: fullscreen (macOS)
 hl.bind(cmd .. " + period",    hl.dsp.exec_cmd("qs ipc call bar toggle"))
 -- Cmd+Ctrl+Q: lock the screen (same shortcut as macOS)
 hl.bind(cmd .. " + CTRL + Q",  hl.dsp.exec_cmd("pidof hyprlock || hyprlock"))
 hl.bind(cmd .. " + SHIFT + Q", hl.dsp.exec_cmd("command -v hyprshutdown >/dev/null 2>&1 && hyprshutdown || hyprctl dispatch 'hl.dsp.exit()'"))
+
+-- Window management (macOS / Rectangle style), for any window: a maximized one
+-- is restored first and a tiled one becomes floating (Cmd+G puts it back in
+-- the tiling). Cmd+Option combos need the [cmd+opt] layer in keyd, since
+-- Cmd+arrows and Option+arrows already move the text cursor in apps.
+--   Cmd+Option+arrows  half of the screen
+--   Cmd+Option+Enter   maximize, keeping the bar / restore
+--   Cmd+Option+C       center
+--   Cmd+Option+= / -   bigger / smaller, keeping the center
+--   Cmd+M              minimize; restore from the bar's minimized list
+
+-- Area of the focused monitor not covered by bars, in layout coordinates
+local function usableArea()
+    local m = hl.get_active_monitor()
+    if not m then return nil end
+    local r = m.reserved or {}
+    local top, bottom = r.top or 0, r.bottom or 0
+    local left, right = r.left or 0, r.right or 0
+    return {
+        x = m.x + left,
+        y = m.y + top,
+        w = m.width / m.scale - left - right,
+        h = m.height / m.scale - top - bottom,
+    }
+end
+
+-- Puts the window at an exact position and size; any window can take this
+local function placeWindow(w, x, y, width, height)
+    local target = "address:" .. w.address
+    -- Hyprland ignores moves and resizes while maximized or fullscreen
+    if (w.fullscreen or 0) ~= 0 then
+        hl.dispatch(hl.dsp.window.fullscreen({ mode = w.fullscreen == 1 and "maximized" or "fullscreen", action = "unset", window = target }))
+    end
+    if not w.floating then
+        hl.dispatch(hl.dsp.window.float({ action = "enable", window = target }))
+    end
+    hl.dispatch(hl.dsp.window.resize({ x = math.floor(width), y = math.floor(height), window = target }))
+    hl.dispatch(hl.dsp.window.move({ x = math.floor(x), y = math.floor(y), window = target }))
+end
+
+local function snapWindow(side)
+    local w, a = hl.get_active_window(), usableArea()
+    if not w or not a then return end
+    local rect = ({
+        left  = { a.x,           a.y,           a.w / 2, a.h },
+        right = { a.x + a.w / 2, a.y,           a.w / 2, a.h },
+        up    = { a.x,           a.y,           a.w,     a.h / 2 },
+        down  = { a.x,           a.y + a.h / 2, a.w,     a.h / 2 },
+    })[side]
+    placeWindow(w, rect[1], rect[2], rect[3], rect[4])
+end
+
+local function centerWindow()
+    local w, a = hl.get_active_window(), usableArea()
+    if not w or not a then return end
+    -- A floating window keeps its size; anything else gets a comfortable one
+    local width, height = a.w * 0.7, a.h * 0.75
+    if w.floating and (w.fullscreen or 0) == 0 then width, height = w.size.x, w.size.y end
+    placeWindow(w, a.x + (a.w - width) / 2, a.y + (a.h - height) / 2, width, height)
+end
+
+-- Grows (step > 0) or shrinks the window around its center, within the screen
+local function resizeWindow(step)
+    local w, a = hl.get_active_window(), usableArea()
+    if not w or not a then return end
+    local width = math.max(320, math.min(a.w, w.size.x + step * 60))
+    local height = math.max(200, math.min(a.h, w.size.y + step * 40))
+    local cx, cy = w.at.x + w.size.x / 2, w.at.y + w.size.y / 2
+    local x = math.max(a.x, math.min(a.x + a.w - width, cx - width / 2))
+    local y = math.max(a.y, math.min(a.y + a.h - height, cy - height / 2))
+    placeWindow(w, x, y, width, height)
+end
+
+local function minimizeWindow()
+    if not hl.get_active_window() then return end
+    hl.dispatch(hl.dsp.window.move({ workspace = "special:minimized", follow = false }))
+end
+
+-- Brings a minimized window back to the current desktop. Global so the bar's
+-- minimized list can call it: hyprctl eval 'Windows.restore("0x...")'
+Windows = {
+    snap = snapWindow,
+    center = centerWindow,
+    resize = resizeWindow,
+    minimize = minimizeWindow,
+    restore = function(address)
+        local ws = hl.get_active_workspace()
+        local target = "address:" .. address
+        hl.dispatch(hl.dsp.window.move({ workspace = ws and ws.id or 1, window = target, follow = false }))
+        hl.dispatch(hl.dsp.focus({ window = target }))
+    end,
+}
+
+for side, key in pairs({ left = "left", right = "right", up = "up", down = "down" }) do
+    hl.bind(cmd .. " + ALT + " .. key, function() snapWindow(side) end)
+end
+hl.bind(cmd .. " + ALT + RETURN", hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }))
+hl.bind(cmd .. " + ALT + C",      centerWindow)
+hl.bind(cmd .. " + ALT + equal",  function() resizeWindow(1) end,  { repeating = true })
+hl.bind(cmd .. " + ALT + minus",  function() resizeWindow(-1) end, { repeating = true })
+hl.bind(cmd .. " + M",            minimizeWindow)
 
 -- Cmd+F3: show desktop (macOS style). Hides the current workspace's windows
 -- in a special workspace; pressing it again brings them back to the active
@@ -444,15 +570,20 @@ Desktops = {
     count  = function() return desktopCount end,
 }
 
--- A workspace that appears beyond the last desktop (e.g. an app opening on
--- workspace 8) is renumbered to the next desktop instead of leaving a gap.
--- It is renumbered first and only then made a desktop, one per event: adding
--- the rule first created that workspace, the renumbering then failed, and every
--- new workspace re-triggered this handler (it once grew to 145 desktops).
+-- A workspace that appears beyond the last desktop WITH WINDOWS (e.g. an app
+-- opening on workspace 8) is renumbered to the next desktop instead of leaving
+-- a gap. Empty ones are left alone: Hyprland creates one for every monitor
+-- that turns on (opening the lid), and adopting it made Hyprland create
+-- another, in a loop (it reached 145 and later 101 desktops). The cooldown
+-- also ignores the events caused by our own renumbering.
+local adoptCooldownUntil = 0
+
 hl.on("workspace.created", function()
     hl.timer(function()
+        if os.time() < adoptCooldownUntil then return end
         for _, ws in ipairs(normalWorkspaces()) do
-            if ws.id > desktopCount then
+            if ws.id > desktopCount and ws.windows > 0 then
+                adoptCooldownUntil = os.time() + 2
                 local target = desktopCount + 1
                 if ws.id ~= target then
                     hl.dispatch(hl.dsp.workspace.change_id({ workspace = ws.id, id = target }))
@@ -481,6 +612,10 @@ end
 
 -- Ctrl+arrows (macOS style): keyd turns physical Ctrl+arrows into
 -- Super+Ctrl+arrows so they never collide with Option+arrows (sent as Ctrl+arrows)
+-- Ctrl+Up / Ctrl+Down: open / close the desktop overview (macOS Mission
+-- Control); keyd sends them as Super+Ctrl+Up / Down
+hl.bind("SUPER + CTRL + up",   hl.dsp.exec_cmd("qs ipc call overview open"))
+hl.bind("SUPER + CTRL + down", hl.dsp.exec_cmd("qs ipc call overview close"))
 hl.bind("SUPER + CTRL + left",  function() goToDesktop(currentDesktop() - 1) end)
 hl.bind("SUPER + CTRL + right", function() goToDesktop(currentDesktop() + 1) end)
 
@@ -552,6 +687,22 @@ hl.window_rule({
     float     = true,
     size      = { 1100, 700 },
     center    = true,
+})
+
+-- Notes (opened from the launcher) as a centered floating window
+hl.window_rule({
+    name   = "float-notes",
+    match  = { title = "^Notes$" },
+    float  = true,
+    size   = { 920, 600 },
+    center = true,
+})
+
+-- Blur behind the desktop overview
+hl.layer_rule({
+    name  = "blur-overview",
+    match = { namespace = "^overview$" },
+    blur  = true,
 })
 
 -- btop (opened from the bar's usage summary) as a centered floating window

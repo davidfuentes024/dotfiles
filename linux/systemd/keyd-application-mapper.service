@@ -1,0 +1,11 @@
+# Per-app keyd overrides (linux/keyd/app.conf), e.g. Cmd sent as Super inside
+# WezTerm. Started by Hyprland at login (it needs WAYLAND_DISPLAY); restarted
+# automatically if it dies, which otherwise silently broke those shortcuts.
+[Unit]
+Description=keyd per-application key overrides
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/keyd-application-mapper
+Restart=always
+RestartSec=2
