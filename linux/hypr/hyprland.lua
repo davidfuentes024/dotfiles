@@ -204,13 +204,19 @@ local cmd = "SUPER"
 -- Cmd+Q quits the whole app like macOS. Closing the window is not enough:
 -- tray apps (Discord, Steam, Spotify...) just hide and keep running. SIGTERM
 -- (not SIGKILL) still lets the app save its state and exit cleanly.
--- Exception: every WezTerm window shares one process, so killing it would take
--- all terminals down with no prompt. There Cmd+Q only closes the focused
--- window, which goes through WezTerm's close confirmation.
+-- Exception: apps whose windows share one process with more than that window.
+-- All WezTerm windows are one process, and Quickshell windows (e.g. Notes) are
+-- the desktop shell itself (bar, notifications, launcher). Killing them would
+-- take everything down, so Cmd+Q only closes the focused window there.
+local sharedProcessApps = {
+    ["org.wezfurlong.wezterm"] = true,
+    ["org.quickshell"] = true,
+}
+
 local function quitActiveApp()
     local w = hl.get_active_window()
     if not w or not w.pid or w.pid <= 1 then return end
-    if w.class == "org.wezfurlong.wezterm" then
+    if sharedProcessApps[w.class] then
         hl.dispatch(hl.dsp.window.close())
         return
     end
@@ -222,6 +228,11 @@ end
 local function forceQuitActiveApp()
     local w = hl.get_active_window()
     if not w or not w.pid or w.pid <= 1 then return end
+    -- Never the shell: that would kill the bar and everything with it
+    if w.class == "org.quickshell" then
+        hl.dispatch(hl.dsp.window.close())
+        return
+    end
     hl.exec_cmd("kill -KILL " .. w.pid)
 end
 
@@ -553,6 +564,15 @@ hl.window_rule({
     float     = true,
     size      = { 1100, 700 },
     center    = true,
+})
+
+-- Notes (opened from the launcher) as a centered floating window
+hl.window_rule({
+    name   = "float-notes",
+    match  = { title = "^Notes$" },
+    float  = true,
+    size   = { 920, 600 },
+    center = true,
 })
 
 -- btop (opened from the bar's usage summary) as a centered floating window
