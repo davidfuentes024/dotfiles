@@ -58,6 +58,8 @@ link_linux() {
        "$HOME/.config/systemd/user/keyd-application-mapper.service"
   command -v systemctl >/dev/null && systemctl --user daemon-reload
   link "$DOTFILES_DIR/linux/quickshell" "$HOME/.config/quickshell"
+  # Apps provided by the shell (e.g. Notes), so the launcher lists them
+  link "$DOTFILES_DIR/linux/applications/notes.desktop" "$HOME/.local/share/applications/notes.desktop"
 }
 
 link_macos() {

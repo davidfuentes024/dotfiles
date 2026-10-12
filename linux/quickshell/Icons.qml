@@ -40,6 +40,8 @@ Singleton {
     readonly property string bell: glyph(0xF009A)
     readonly property string bellOff: glyph(0xF009B)
     readonly property string search: glyph(0xF0349)
+    readonly property string note: glyph(0xF039A)
+    readonly property string trash: glyph(0xF0A7A)
     readonly property string application: glyph(0xF0614)
     readonly property string calculator: glyph(0xF00EC)
     readonly property string file: glyph(0xF0214)

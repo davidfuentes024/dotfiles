@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Notes
+GenericName=Notes
+Comment=Quick plain-text notes, saved automatically
+Exec=qs ipc call notes open
+Icon=accessories-text-editor
+Terminal=false
+Categories=Utility;TextEditor;
+Keywords=notes;memo;text;write;
