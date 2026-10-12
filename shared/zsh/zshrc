@@ -1,0 +1,165 @@
+# ============================================================
+# ZSH
+# ============================================================
+
+export ZSH="$HOME/.oh-my-zsh"
+
+plugins=(
+  git
+  zsh-autosuggestions
+  zsh-syntax-highlighting
+  fzf
+)
+
+source "$ZSH/oh-my-zsh.sh"
+
+
+# ============================================================
+# PATH
+# ============================================================
+
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.pub-cache/bin:$PATH"
+export PATH="$HOME/.lmstudio/bin:$PATH"
+
+
+# ============================================================
+# RUBY
+# ============================================================
+
+command -v rbenv >/dev/null && eval "$(rbenv init - zsh)"
+
+
+# ============================================================
+# STARSHIP
+# ============================================================
+
+command -v starship >/dev/null && eval "$(starship init zsh)"
+
+
+# ============================================================
+# ZOXIDE
+# ============================================================
+
+command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
+
+
+# ============================================================
+# ALIASES
+# ============================================================
+
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+
+alias ls="eza"
+alias ll="eza -lh --icons --git"
+alias la="eza -lah --icons --git"
+alias cat="bat"
+
+alias v="nvim"
+alias vi="nvim"
+alias vim="nvim"
+
+alias c="clear"
+
+
+# ============================================================
+# GIT
+# ============================================================
+
+alias gs="git status"
+alias ga="git add"
+alias gaa="git add ."
+alias gc="git commit"
+alias gp="git push"
+alias gpl="git pull"
+alias gco="git checkout"
+alias gcb="git checkout -b"
+alias gb="git branch"
+alias gd="git diff"
+
+alias lg="lazygit"
+
+
+# ============================================================
+# DOCKER
+# ============================================================
+
+alias ld="lazydocker"
+
+
+# ============================================================
+# FZF
+# ============================================================
+
+export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow --exclude .git'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
+
+
+# ============================================================
+# FUNCTIONS
+# ============================================================
+
+mkcd() {
+  mkdir -p "$1" && cd "$1"
+}
+
+# Alterna el fondo de WezTerm entre la imagen y el color plano del tema.
+# Uso: bg [image|color|toggle]  (sin argumento = toggle)
+bg() {
+  local state_dir="$HOME/.local/state/wezterm"
+  local state_file="$state_dir/bg_mode"
+  mkdir -p "$state_dir"
+
+  local current="image"
+  [ -f "$state_file" ] && current=$(cat "$state_file")
+
+  case "$1" in
+    image|color)
+      echo "$1" > "$state_file"
+      ;;
+    toggle|"")
+      if [ "$current" = "image" ]; then
+        echo "color" > "$state_file"
+      else
+        echo "image" > "$state_file"
+      fi
+      ;;
+    *)
+      echo "Uso: bg [image|color|toggle]"
+      return 1
+      ;;
+  esac
+
+  if [ -n "$WEZTERM_PANE" ]; then
+    wezterm cli reload-configuration 2>/dev/null
+  fi
+
+  echo "Fondo de WezTerm: $(cat "$state_file")"
+}
+
+
+# ============================================================
+# OS-SPECIFIC AND PRIVATE CONFIG
+# ============================================================
+
+# Resolve the repo root through the ~/.zshrc symlink (shared/zsh/zshrc -> repo)
+DOTFILES_DIR="${${(%):-%N}:A:h:h:h}"
+
+case "$OSTYPE" in
+  darwin*) [ -f "$DOTFILES_DIR/macos/zsh/macos.zsh" ] && source "$DOTFILES_DIR/macos/zsh/macos.zsh" ;;
+  linux*)  [ -f "$DOTFILES_DIR/linux/zsh/linux.zsh" ] && source "$DOTFILES_DIR/linux/zsh/linux.zsh" ;;
+esac
+
+# Dotfiles commands (e.g. `theme`)
+export PATH="$DOTFILES_DIR/shared/bin:$PATH"
+
+# Prompt colors follow the active theme once `theme` has generated them
+_theme_starship="${XDG_STATE_HOME:-$HOME/.local/state}/theme/starship.toml"
+[ -f "$_theme_starship" ] && export STARSHIP_CONFIG="$_theme_starship"
+unset _theme_starship
+
+# Machine-local secrets (tokens, API keys). Gitignored: never commit it.
+[ -f "$DOTFILES_DIR/shared/zsh/secrets.zsh" ] && source "$DOTFILES_DIR/shared/zsh/secrets.zsh"

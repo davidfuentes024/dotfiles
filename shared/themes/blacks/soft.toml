@@ -1,0 +1,5 @@
+# Soft black: the original WezTerm background
+bg = "#1c1c1e"
+bg_alt = "#232325"
+surface = "#2c2c2f"
+overlay = "#3a3a3e"

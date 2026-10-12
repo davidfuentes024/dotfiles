@@ -1,0 +1,62 @@
+# Prompt: a segmented bar with the current directory and git branch/status,
+# then the input on its own line. Colors come from [palettes.current]; the
+# `theme` command writes a copy with the active theme's colors to
+# ~/.local/state/theme/starship.toml (used via STARSHIP_CONFIG). The values
+# below are the default theme (neon, soft black).
+
+"$schema" = "https://starship.rs/config-schema.json"
+
+add_newline = true
+palette = "current"
+
+format = """
+[](fg:accent)\
+$directory\
+[](fg:accent bg:surface)\
+$git_branch\
+$git_status\
+[](fg:surface)\
+$fill\
+$cmd_duration
+$character"""
+
+[palettes.current]
+base = "#1c1c1e"
+surface = "#2c2c2f"
+text = "#dcdfe4"
+accent = "#4aa5f0"
+success = "#8cc265"
+warning = "#d18f52"
+error = "#e05561"
+muted = "#5c6370"
+
+[directory]
+style = "fg:base bg:accent bold"
+format = "[ $path ]($style)[$read_only]($read_only_style)"
+read_only = " "
+read_only_style = "fg:base bg:accent"
+truncation_length = 3
+truncation_symbol = "…/"
+truncate_to_repo = false
+
+[git_branch]
+symbol = ""
+style = "fg:text bg:surface"
+format = "[ $symbol $branch ]($style)"
+
+[git_status]
+style = "fg:warning bg:surface"
+format = "[($all_status$ahead_behind )]($style)"
+
+[fill]
+symbol = " "
+
+[cmd_duration]
+min_time = 2000
+style = "fg:muted"
+format = "[$duration]($style)"
+
+[character]
+success_symbol = "[❯](fg:success)"
+error_symbol = "[❯](fg:error)"
+vimcmd_symbol = "[❮](fg:accent)"

@@ -1,0 +1,58 @@
+# Views on Cmd+<key> (keyd turns Cmd+letter into Ctrl+letter). Ctrl+F replaces
+# its default "page down", which stays on the Page Down key.
+[[keymaps]]
+command = "SearchPage"
+key_sequence = "C-f"
+
+[[keymaps]]
+command = "LibraryPage"
+key_sequence = "C-l"
+
+[[keymaps]]
+command = "Queue"
+key_sequence = "C-u"
+
+# Volume without Shift ("+" stays too) and a one-key mute
+[[keymaps]]
+command = { VolumeChange = { offset = 5 } }
+key_sequence = "="
+
+[[keymaps]]
+command = "Mute"
+key_sequence = "m"
+
+# More pages on Cmd+<key>
+[[keymaps]]
+command = "TopTrackPage"
+key_sequence = "C-t"
+
+[[keymaps]]
+command = "LikedTrackPage"
+key_sequence = "C-y"
+
+# One-key actions on the selected item (track, album, playlist...)
+[[actions]]
+action = "AddToPlaylist"
+key_sequence = "P"
+target = "SelectedItem"
+
+[[actions]]
+action = "ToggleLiked"
+key_sequence = "L"
+target = "SelectedItem"
+
+[[actions]]
+action = "GoToArtist"
+key_sequence = "g A"
+target = "SelectedItem"
+
+[[actions]]
+action = "GoToAlbum"
+key_sequence = "g B"
+target = "SelectedItem"
+
+# Like or unlike the song that is playing
+[[actions]]
+action = "ToggleLiked"
+key_sequence = "f"
+target = "PlayingTrack"
