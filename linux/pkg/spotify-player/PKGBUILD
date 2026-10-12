@@ -1,17 +1,18 @@
-# spotify_player from the davidfuentes024/spotify-player fork: upstream
-# v0.25.1 built against rspotify-model with ramsayleung/rspotify#579, which
-# fixes searches failing when Spotify sends `null` for an episode's
-# `is_externally_hosted`. Drop this package (back to spotify-player-bin) once
-# an upstream spotify_player release includes the fix.
+# spotify_player built from upstream with one fix on its rspotify-model
+# dependency, taken from the branch of ramsayleung/rspotify#579: Spotify
+# sometimes sends `null` for an episode's `is_externally_hosted`, which made
+# every search containing such an episode fail. Drop this package (back to
+# spotify-player-bin) once a spotify_player release includes the fix.
 
 pkgname=spotify-player-patched
 _pkgname=spotify-player
 pkgver=0.25.1
-pkgrel=2
-_tag="v${pkgver}-patched.1"
+pkgrel=3
+# Commit of the fix in davidfuentes024/rspotify (PR #579)
+_rspotify_fix=17b12ef8b80a38ae6e605c20a4fc81df3d95c40f
 pkgdesc='A Spotify player in the terminal (with a fix for null episode fields)'
 arch=('x86_64')
-url="https://github.com/davidfuentes024/${_pkgname}"
+url="https://github.com/aome510/${_pkgname}"
 license=('MIT')
 depends=('alsa-lib' 'dbus' 'gcc-libs' 'glibc' 'openssl')
 makedepends=('cargo' 'git')
@@ -19,21 +20,27 @@ makedepends=('cargo' 'git')
 options=('!lto')
 provides=("${_pkgname}")
 conflicts=("${_pkgname}" "${_pkgname}-bin")
-source=("${_pkgname}-${_tag}.tar.gz::${url}/archive/${_tag}.tar.gz")
-sha256sums=('11913b1b9d4e6b956ca84bb50f5d3a40d6ce7cafe23e403ec904721b93f18921')
+source=("${_pkgname}-${pkgver}.tar.gz::${url}/archive/v${pkgver}.tar.gz")
+sha256sums=('2f9f28e7ea74e14eb3be91d2655dd4666f2821cc58f74ec5db7640580e6a73bb')
 
 prepare() {
-  cd "${_pkgname}-${_tag#v}"
-  cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+  cd "${_pkgname}-${pkgver}"
+  cat >> Cargo.toml <<EOF
+
+[patch.crates-io]
+rspotify-model = { git = "https://github.com/davidfuentes024/rspotify", rev = "${_rspotify_fix}" }
+EOF
+  # Not --locked: the lockfile has to pick up the patched dependency
+  cargo fetch --target "$(rustc -vV | sed -n 's/host: //p')"
 }
 
 build() {
-  cd "${_pkgname}-${_tag#v}"
+  cd "${_pkgname}-${pkgver}"
   cargo build --frozen --release --bin spotify_player
 }
 
 package() {
-  cd "${_pkgname}-${_tag#v}"
+  cd "${_pkgname}-${pkgver}"
   install -Dm755 target/release/spotify_player "${pkgdir}/usr/bin/spotify_player"
   install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
   install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
