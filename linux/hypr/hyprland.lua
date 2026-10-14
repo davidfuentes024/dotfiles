@@ -50,7 +50,9 @@ local function applyLaptopMonitor()
             output   = LAPTOP,
             disabled = false, -- needed to re-enable it while running
             mode     = "1920x1080@120",
-            position = "0x0",
+            -- Never a fixed 0x0: the external monitor is already there, and
+            -- two overlapping monitors mix up the cursor, focus and workspaces
+            position = "auto",
             scale    = 1.25,
         })
     end
@@ -130,6 +132,8 @@ hl.config({
         gaps_out    = 0,
         border_size = 1,
         layout      = "dwindle",
+        -- Only windows with the "immediate" rule (games) may tear; see below
+        allow_tearing = true,
         col = {
             -- A palette may set its own border color; otherwise the accent
             active_border   = "rgb(" .. (theme.border or theme.accent or "4aa5f0") .. ")",
@@ -226,9 +230,20 @@ local sharedProcessApps = {
     ["org.quickshell"] = true,
 }
 
+-- Apps whose window is not the process that owns the app. Steam's window
+-- belongs to steamwebhelper: killing it makes Steam start a new one, so the
+-- window "reopens by itself". These get the app's own quit command instead.
+local quitCommands = {
+    ["steam"] = "steam -shutdown",
+}
+
 local function quitActiveApp()
     local w = hl.get_active_window()
     if not w or not w.pid or w.pid <= 1 then return end
+    if quitCommands[w.class] then
+        hl.exec_cmd(quitCommands[w.class])
+        return
+    end
     if sharedProcessApps[w.class] then
         hl.dispatch(hl.dsp.window.close())
         return
@@ -722,3 +737,66 @@ hl.window_rule({
     size   = { 900, 550 },
     center = true,
 })
+
+-- Counter-Strike 2 always opens fullscreen. Cmd+Ctrl+F can't do it in-game:
+-- keyd leaves Alt as plain Alt inside games (linux/keyd/app.conf)
+hl.window_rule({
+    name       = "fullscreen-cs2",
+    match      = { class = "^cs2$" },
+    fullscreen = true,
+})
+
+-- Games present frames immediately (tearing) instead of waiting for vsync.
+-- The monitor is 60 Hz, so otherwise every game is stuck at 60 FPS no matter
+-- what its own FPS limit says.
+hl.window_rule({
+    name      = "tearing-games",
+    match     = { class = "^(cs2|steam_app_[0-9]+)$" },
+    immediate = true,
+})
+
+-- Games are played at 1080p. While one is open, the monitor it is on drops to
+-- 1920x1080 at scale 1, so the game's fullscreen is the real screen mode
+-- instead of a 1080p image scaled by XWayland onto 4K, and the 4 GB GPU does
+-- not also hold 4K desktop buffers (running out of VRAM crashed CS2). Closing
+-- the last game reloads the config, which restores the normal monitor rules.
+local GAME_MODE = "1920x1080@60"
+local gameClasses = { "^cs2$", "^steam_app_%d+$" }
+local gameMonitor = nil  -- monitor switched to GAME_MODE, while a game runs
+
+local function isGame(w)
+    if not w or not w.class then return false end
+    for _, pattern in ipairs(gameClasses) do
+        if w.class:match(pattern) then return true end
+    end
+    return false
+end
+
+local function updateGameDisplay()
+    local game
+    for _, w in ipairs(hl.get_windows()) do
+        if isGame(w) then game = w break end
+    end
+    if game and not gameMonitor then
+        local m = game.monitor or hl.get_active_monitor()
+        -- A 1080p screen (the laptop's) already fits the game
+        if not m or m.width <= 1920 then return end
+        gameMonitor = m.description ~= "" and ("desc:" .. m.description) or m.name
+        hl.monitor({ output = gameMonitor, mode = GAME_MODE, position = "auto", scale = 1 })
+    elseif not game and gameMonitor then
+        gameMonitor = nil
+        hl.exec_cmd("hyprctl reload")
+    end
+end
+
+-- Delayed so a closing window is already gone from the window list
+local function scheduleGameDisplayUpdate()
+    hl.timer(updateGameDisplay, { timeout = 200, type = "oneshot" })
+end
+
+hl.on("window.open",    scheduleGameDisplayUpdate)
+hl.on("window.class",   scheduleGameDisplayUpdate)  -- some games set it late
+hl.on("window.destroy", scheduleGameDisplayUpdate)
+-- A config reload (theme switch, deleted desktop) re-applies the normal
+-- rules; switch back if a game is still running (once they are applied)
+scheduleGameDisplayUpdate()
