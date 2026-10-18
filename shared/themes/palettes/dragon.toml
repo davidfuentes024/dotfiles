@@ -1,6 +1,6 @@
 # Dragon: ink and old lacquer (Kanagawa Dragon). Warm grays, earthy syntax a
 # touch livelier than the original, and aged gold as the only accent.
-fg = "#d6d4cb"
+fg = "#f9f8f7"
 fg_dim = "#b3b3aa"
 accent = "#ccb079"
 accent_alt = "#c9ae9d"
