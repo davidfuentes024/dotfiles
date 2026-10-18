@@ -156,7 +156,7 @@ local function terminal_colors(c)
   local ansi = {
     c.surface, c.red, c.green, c.yellow, c.blue, c.magenta, c.cyan, c.fg,
     c.fg_dim, c.bright_red, c.bright_green, c.bright_yellow, c.bright_blue,
-    c.bright_magenta, c.bright_cyan, "#ffffff",
+    c.bright_magenta, c.bright_cyan, c.bright_white or "#ffffff",
   }
   for i, color in ipairs(ansi) do
     vim.g["terminal_color_" .. (i - 1)] = color
@@ -168,6 +168,10 @@ local applied
 function M.apply()
   local name, black = current_choice()
   local c = load_colors(name, black)
+  -- Light palettes (a bright bg) need background=light for plugins that check it
+  local r, g, b = c.bg:match("#(%x%x)(%x%x)(%x%x)")
+  local brightness = (tonumber(r, 16) * 299 + tonumber(g, 16) * 587 + tonumber(b, 16) * 114) / 1000
+  vim.o.background = brightness > 128 and "light" or "dark"
   vim.cmd("highlight clear")
   vim.g.colors_name = "dotfiles"
   for group, spec in pairs(highlights(c)) do

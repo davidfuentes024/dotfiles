@@ -96,7 +96,7 @@ if c.bg and c.fg then
       },
       brights = {
         c.fg_dim, c.bright_red, c.bright_green, c.bright_yellow,
-        c.bright_blue, c.bright_magenta, c.bright_cyan, '#ffffff',
+        c.bright_blue, c.bright_magenta, c.bright_cyan, c.bright_white or '#ffffff',
       },
       tab_bar = {
         background = c.bg,
