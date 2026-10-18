@@ -1,0 +1,26 @@
+# Original deep: the original colors on darker backgrounds (background RGB scaled to
+# about 55-70%). Test variant of original; compare with `theme original` and `theme check original-deep`.
+fg = "#fcfcfd"
+fg_dim = "#b1b6bf"
+accent = "#7abcf2"
+accent_alt = "#e5c07b"
+border = "#ffffff"
+red = "#eea3a9"
+green = "#91c56c"
+yellow = "#ddad80"
+blue = "#79bcf4"
+magenta = "#dba3ec"
+cyan = "#69c3ce"
+bright_red = "#ff99a1"
+bright_green = "#a5e075"
+bright_yellow = "#f0a762"
+bright_blue = "#4dc4ff"
+bright_magenta = "#e799ff"
+bright_cyan = "#4cd1e0"
+
+# Background shades (override the shared black) and the separator line
+bg = "#0c0d10"
+bg_alt = "#111316"
+surface = "#181a1f"
+overlay = "#262931"
+line = "#777a80"

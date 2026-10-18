@@ -1,0 +1,26 @@
+# Onedark deep: the onedark colors on darker backgrounds (background RGB scaled to
+# about 55-70%). Test variant of onedark; compare with `theme onedark` and `theme check onedark-deep`.
+fg = "#eeeff2"
+fg_dim = "#a7acb7"
+accent = "#82abff"
+accent_alt = "#e5c07b"
+border = "#2c313a"
+red = "#e9969d"
+green = "#98c379"
+yellow = "#e5c07b"
+blue = "#68b3f0"
+magenta = "#d397e5"
+cyan = "#5db9c5"
+bright_red = "#e9969d"
+bright_green = "#98c379"
+bright_yellow = "#e5c07b"
+bright_blue = "#68b3f0"
+bright_magenta = "#d397e5"
+bright_cyan = "#5db9c5"
+
+# Background shades (override the shared black) and the separator line
+bg = "#0a0b0d"
+bg_alt = "#08090b"
+surface = "#131418"
+overlay = "#1f2229"
+line = "#6e7279"

@@ -1,0 +1,25 @@
+# Tunnel deep: the tunnel colors on darker backgrounds (background RGB scaled to
+# about 55-70%). Test variant of tunnel; compare with `theme tunnel` and `theme check tunnel-deep`.
+fg = "#f4f6f4"
+fg_dim = "#a8b4ad"
+accent = "#7fd4a8"
+accent_alt = "#daa75f"
+red = "#daa4a0"
+green = "#7fd4a8"
+yellow = "#daa75f"
+blue = "#97b7b2"
+magenta = "#bcacb5"
+cyan = "#86c2b0"
+bright_red = "#dfa19c"
+bright_green = "#9be3bd"
+bright_yellow = "#e6b977"
+bright_blue = "#96bab4"
+bright_magenta = "#bdabb5"
+bright_cyan = "#9dd3c3"
+
+# Background shades (override the shared black) and the separator line
+bg = "#080c0a"
+bg_alt = "#0d110e"
+surface = "#131815"
+overlay = "#1f2924"
+line = "#6f7772"

@@ -1,0 +1,25 @@
+# Mono deep: the mono colors on darker backgrounds (background RGB scaled to
+# about 55-70%). Test variant of mono; compare with `theme mono` and `theme check mono-deep`.
+fg = "#f0f0f0"
+fg_dim = "#acacac"
+accent = "#ffc799"
+accent_alt = "#99ffe4"
+red = "#ff8a8a"
+green = "#99ffe4"
+yellow = "#ffc799"
+blue = "#adadad"
+magenta = "#bdbdbd"
+cyan = "#99ffe4"
+bright_red = "#ffa0a0"
+bright_green = "#b8fff0"
+bright_yellow = "#ffd9b8"
+bright_blue = "#c0c0c0"
+bright_magenta = "#d6d6d6"
+bright_cyan = "#b8fff0"
+
+# Background shades (override the shared black) and the separator line
+bg = "#090909"
+bg_alt = "#0e0e0e"
+surface = "#141414"
+overlay = "#232323"
+line = "#727272"

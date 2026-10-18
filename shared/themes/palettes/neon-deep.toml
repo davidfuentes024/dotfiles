@@ -1,0 +1,25 @@
+# Neon deep: the neon colors on darker backgrounds (background RGB scaled to
+# about 55-70%). Test variant of neon; compare with `theme neon` and `theme check neon-deep`.
+fg = "#f6f6f8"
+fg_dim = "#b2b0ba"
+accent = "#ea9aba"
+accent_alt = "#d9b07a"
+red = "#e59faf"
+green = "#92baa7"
+yellow = "#d9b07a"
+blue = "#b0aec8"
+magenta = "#cda4cd"
+cyan = "#84bbbf"
+bright_red = "#eb9aab"
+bright_green = "#a5cbb8"
+bright_yellow = "#e6c393"
+bright_blue = "#b1afcb"
+bright_magenta = "#d1a3d1"
+bright_cyan = "#97cbcf"
+
+# Background shades (override the shared black) and the separator line
+bg = "#0c0b0f"
+bg_alt = "#111016"
+surface = "#18161d"
+overlay = "#292632"
+line = "#76757c"

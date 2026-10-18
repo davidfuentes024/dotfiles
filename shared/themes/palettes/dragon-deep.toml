@@ -1,0 +1,25 @@
+# Dragon deep: the dragon colors on darker backgrounds (background RGB scaled to
+# about 55-70%). Test variant of dragon; compare with `theme dragon` and `theme check dragon-deep`.
+fg = "#f9f8f7"
+fg_dim = "#b3b3aa"
+accent = "#ccb079"
+accent_alt = "#c9ae9d"
+red = "#e0a5a2"
+green = "#a7b98f"
+yellow = "#d4b77e"
+blue = "#a2b6bf"
+magenta = "#bbafbc"
+cyan = "#a6b7b3"
+bright_red = "#e5a39f"
+bright_green = "#aac08e"
+bright_yellow = "#e2c792"
+bright_blue = "#a1b6c1"
+bright_magenta = "#bdb0be"
+bright_cyan = "#a2b8b2"
+
+# Background shades (override the shared black) and the separator line
+bg = "#0d0d0c"
+bg_alt = "#131211"
+surface = "#191816"
+overlay = "#292724"
+line = "#777771"
