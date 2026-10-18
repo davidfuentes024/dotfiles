@@ -145,7 +145,7 @@ local function highlights(c)
     CmpItemMenu = { fg = c.fg_dim },
     NeoTreeNormal = { link = "Normal" },
     NeoTreeNormalNC = { link = "Normal" },
-    AlphaHeader = { fg = c.blue },
+    AlphaHeader = { fg = c.accent },
     AlphaButtons = { fg = c.fg },
     AlphaShortcut = { fg = c.accent },
   }

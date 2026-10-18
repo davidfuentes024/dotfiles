@@ -70,6 +70,12 @@ return {
         dashboard.button("q", "  Salir",              ":qa<CR>"),
       }
 
+      -- alpha defaults to Type/Keyword/Number; use the groups from core/theme.lua
+      dashboard.section.header.opts.hl = "AlphaHeader"
+      for _, button in ipairs(dashboard.section.buttons.val) do
+        button.opts.hl_shortcut = "AlphaShortcut"
+      end
+
       dashboard.section.footer.val = ""
       alpha.setup(dashboard.config)
     end
