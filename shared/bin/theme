@@ -7,6 +7,7 @@
 #   theme black <variant> switch the shared black (soft, deep; used by palettes without their own bg)
 #   theme font            list fonts
 #   theme font <name>     switch the global font (terminal, bar, lock screen, GTK)
+#   theme check [--md] [name]  WCAG AAA contrast report (all palettes, or one)
 #   theme apply           regenerate everything from the saved choice
 #
 # The choice is saved in ~/.local/state/theme/{name,black,font}. WezTerm, nvim and
@@ -219,6 +220,62 @@ apply() {
   fi
 }
 
+# check [--md] [name]: WCAG contrast report for one palette, or all of them
+#   text (fg 14:1, the rest 7:1), selection and tab text 7:1,
+#   separator line and cursor 3:1 (non-text UI, AAA)
+check() {
+  local md=0 only="" file name
+  for arg in "$@"; do
+    if [ "$arg" = "--md" ]; then md=1; else only="$arg"; fi
+  done
+  for file in "$THEMES_DIR"/palettes/*.toml; do
+    name=$(basename "$file" .toml)
+    [ -z "$only" ] || [ "$only" = "$name" ] || continue
+    awk -v name="$name" -v md="$md" '
+      function hexv(s,   i, n, c) {
+        n = 0
+        for (i = 1; i <= length(s); i++) { c = index("0123456789abcdef", substr(s, i, 1)) - 1; n = n * 16 + c }
+        return n
+      }
+      function lin(v) { v = v / 255; return v <= 0.03928 ? v / 12.92 : exp(2.4 * log((v + 0.055) / 1.055)) }
+      function lum(h) { return 0.2126 * lin(hexv(substr(h, 2, 2))) + 0.7152 * lin(hexv(substr(h, 4, 2))) + 0.0722 * lin(hexv(substr(h, 6, 2))) }
+      function cr(a, b,   x, y) { x = lum(a); y = lum(b); return x > y ? (x + 0.05) / (y + 0.05) : (y + 0.05) / (x + 0.05) }
+      function row(label, ratio, target) {
+        total++
+        ok = ratio + 0.0005 >= target
+        if (ok) passed++; else failed = failed " " label
+        if (md) printf "| %s | %.1f | %s | %s |\n", label, ratio, target ":1", ok ? "pass" : "**FAIL**"
+      }
+      FNR == 1 { file++ }
+      /^[a-z_]+ *= *"#[0-9a-fA-F]+"/ {
+        k = $1
+        match($0, /#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]/)
+        # the palette (second file) overrides the shared black (first file)
+        c[k] = tolower(substr($0, RSTART, RLENGTH))
+      }
+      END {
+        if (md) { printf "### %s\n\n| Check | Ratio | Target | Result |\n|---|---|---|---|\n", name }
+        nb = split("bg bg_alt surface", bgs, " ")
+        nt = split("fg fg_dim accent accent_alt red green yellow blue magenta cyan bright_red bright_green bright_yellow bright_blue bright_magenta bright_cyan", txt, " ")
+        for (i = 1; i <= nt; i++) {
+          if (!(txt[i] in c)) continue
+          m = 99
+          for (j = 1; j <= nb; j++) { r = cr(c[txt[i]], c[bgs[j]]); if (r < m) m = r }
+          row(txt[i] " on backgrounds", m, txt[i] == "fg" ? 14 : 7)
+        }
+        row("fg on selection (overlay)", cr(c["fg"], c["overlay"]), 7)
+        row("bg on accent (active tab)", cr(c["bg"], c["accent"]), 7)
+        row("bg on accent_alt (prefix)", cr(c["bg"], c["accent_alt"]), 7)
+        ln = ("line" in c) ? c["line"] : c["overlay"]
+        row("separator line on bg", cr(ln, c["bg"]), 3)
+        row("cursor (accent) on bg", cr(c["accent"], c["bg"]), 3)
+        if (md) printf "\n"
+        else printf "%-10s %2d/%2d pass%s\n", name, passed, total, failed ? "   FAIL:" failed : ""
+      }
+    ' "$THEMES_DIR/blacks/soft.toml" "$file"
+  done
+}
+
 # list <dir> <current>: names in a theme subdirectory, marking the active one
 list() {
   local file name
@@ -257,6 +314,10 @@ main() {
       ;;
     apply)
       apply
+      ;;
+    check)
+      shift
+      check "$@"
       ;;
     black)
       [ -n "${2:-}" ] || die "usage: theme black <soft|deep>"
