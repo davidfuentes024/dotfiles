@@ -17,8 +17,9 @@ bright_blue = "#c0c0c0"
 bright_magenta = "#d6d6d6"
 bright_cyan = "#b8fff0"
 
-# Background shades (override the shared black)
+# Background shades (override the shared black) and the separator line
 bg = "#101010"
 bg_alt = "#171717"
 surface = "#212121"
 overlay = "#323232"
+line = "#727272"

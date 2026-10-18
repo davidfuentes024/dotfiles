@@ -45,7 +45,7 @@ load_colors() {
     eval "$key=\$(value \"\$palette\" $key)"
     eval "[ -n \"\$$key\" ] || $key=\$(value \"\$black\" $key)"
   done
-  for key in fg fg_dim accent accent_alt red green yellow blue magenta cyan; do
+  for key in fg fg_dim line accent accent_alt red green yellow blue magenta cyan; do
     eval "$key=\$(value \"\$palette\" $key)"
   done
 
@@ -84,7 +84,7 @@ set -g status-style bg=default,fg="$fg"
 set -g status-left "#{?client_prefix,#[bg=$accent_alt]#[fg=$bg]#[bold] 󰌌 PREFIX ,#[bg=$accent]#[fg=$bg]#[bold] 󰆍 #S }#[bg=default,fg=default] "
 set-window-option -g window-status-format "#[bg=$surface,fg=$fg_dim] #I 󰁕 #W "
 set-window-option -g window-status-current-format "#[bg=$accent,fg=$bg,bold] #I 󰁔 #W "
-set -g pane-border-style "fg=$overlay"
+set -g pane-border-style "fg=$line"
 set -g pane-active-border-style "fg=$accent"
 set -g status-right "#[bg=$surface,fg=$fg_dim]  #(basename #{pane_current_path}) #[bg=$surface,fg=$fg] 󱎫 %H:%M #[bg=default] "
 EOF

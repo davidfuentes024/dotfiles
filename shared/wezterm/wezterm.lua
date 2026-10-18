@@ -89,7 +89,7 @@ if c.bg and c.fg then
       cursor_border = c.accent,
       selection_bg = c.overlay,
       selection_fg = c.fg,
-      split = c.overlay,
+      split = c.line,
       ansi = {
         c.surface, c.red, c.green, c.yellow,
         c.blue, c.magenta, c.cyan, c.fg,

@@ -64,7 +64,7 @@ local function highlights(c)
     NonText = { fg = c.fg_dim },
     EndOfBuffer = { fg = c.overlay },
     Whitespace = { fg = c.overlay },
-    WinSeparator = { fg = c.overlay },
+    WinSeparator = { fg = c.line },
     Folded = { fg = c.fg_dim, bg = c.surface },
     Title = { fg = c.accent, bold = true },
     Directory = { fg = c.blue },
