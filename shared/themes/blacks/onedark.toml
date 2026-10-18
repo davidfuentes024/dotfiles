@@ -1,0 +1,5 @@
+# One Dark black: the dark One Dark Pro background used with the onedark palette
+bg = "#121417"
+bg_alt = "#0d0f12"
+surface = "#1e2127"
+overlay = "#2c313a"
