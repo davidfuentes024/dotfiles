@@ -1,6 +1,5 @@
 # Mono: graphite and paper (Vesper-like). Grays and white; the only colors are
 # a peach accent, mint strings and a soft red for errors.
-nvim = "vesper"
 fg = "#d8d8d8"
 fg_dim = "#acacac"
 accent = "#ffc799"

@@ -18,3 +18,6 @@ vim.opt.rtp:prepend(lazypath)
 
 -- 4. Cargar plugins automáticamente desde lua/plugins/
 require("lazy").setup("plugins")
+
+-- 5. Colors from the shared theme (the `theme` command)
+require("core.theme").apply()

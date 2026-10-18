@@ -1,6 +1,5 @@
 # One Dark: One Dark Pro text and accent colors on the very dark #121417
 # background (set below) instead of the original #282c34.
-nvim = "onedarkpro"
 fg = "#c8cdd5"
 fg_dim = "#a7acb7"
 accent = "#82abff"

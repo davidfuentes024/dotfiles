@@ -1,6 +1,7 @@
--- Applies the active theme (shared/themes, switched with the `theme` command).
--- Each theme maps to a real colorscheme plugin; the background stays
--- transparent so the terminal's shared black shows through.
+-- Colors for the whole editor, taken from the active theme (shared/themes,
+-- switched with the `theme` command). There is no colorscheme plugin: every
+-- highlight group is built from the same palette the terminal uses, and the
+-- background stays transparent so the terminal's own shows through.
 local M = {}
 
 local state_dir = (vim.env.XDG_STATE_HOME or vim.fn.expand("~/.local/state")) .. "/theme"
@@ -40,87 +41,141 @@ local function load_colors(name, black)
   return colors
 end
 
-local appliers = {
-  onedarkpro = function(c)
-    require("onedarkpro").setup({
-      colors = {
-        onedark_dark = {
-          bg = c.bg, fg = c.fg, comment = c.fg_dim,
-          red = c.red, orange = c.accent_alt, yellow = c.yellow, green = c.green,
-          cyan = c.cyan, blue = c.blue, purple = c.magenta,
-        },
-      },
-      highlights = {
-        LineNr = { fg = c.fg_dim },
-        Visual = { bg = c.overlay },
-      },
-      options = { transparency = true, highlight_inactive_windows = false },
-    })
-    vim.cmd.colorscheme("onedark_dark")
-  end,
+local function highlights(c)
+  local none = "NONE"
+  return {
+    -- Editor
+    Normal = { fg = c.fg, bg = none },
+    NormalNC = { link = "Normal" },
+    NormalFloat = { fg = c.fg, bg = c.bg_alt },
+    FloatBorder = { fg = c.fg_dim, bg = c.bg_alt },
+    FloatTitle = { fg = c.accent, bg = c.bg_alt, bold = true },
+    Cursor = { fg = c.bg, bg = c.accent },
+    CursorLine = { bg = c.surface },
+    CursorLineNr = { fg = c.accent, bold = true },
+    LineNr = { fg = c.fg_dim },
+    SignColumn = { bg = none },
+    ColorColumn = { bg = c.surface },
+    Visual = { bg = c.overlay },
+    Search = { fg = c.bg, bg = c.accent_alt },
+    CurSearch = { fg = c.bg, bg = c.accent },
+    IncSearch = { link = "CurSearch" },
+    MatchParen = { fg = c.accent, bold = true, underline = true },
+    NonText = { fg = c.fg_dim },
+    EndOfBuffer = { fg = c.overlay },
+    Whitespace = { fg = c.overlay },
+    WinSeparator = { fg = c.overlay },
+    Folded = { fg = c.fg_dim, bg = c.surface },
+    Title = { fg = c.accent, bold = true },
+    Directory = { fg = c.blue },
+    Conceal = { fg = c.fg_dim },
+    Question = { fg = c.green },
+    MoreMsg = { fg = c.green },
+    WarningMsg = { fg = c.accent_alt },
+    ErrorMsg = { fg = c.red },
+    StatusLine = { fg = c.fg, bg = c.bg_alt },
+    StatusLineNC = { fg = c.fg_dim, bg = c.bg_alt },
+    TabLine = { fg = c.fg_dim, bg = c.bg_alt },
+    TabLineSel = { fg = c.bg, bg = c.accent },
+    TabLineFill = { bg = c.bg_alt },
+    Pmenu = { fg = c.fg, bg = c.bg_alt },
+    PmenuSel = { fg = c.fg, bg = c.overlay, bold = true },
+    PmenuSbar = { bg = c.surface },
+    PmenuThumb = { bg = c.fg_dim },
+    SpellBad = { undercurl = true, sp = c.red },
+    SpellCap = { undercurl = true, sp = c.accent_alt },
 
-  -- The colorscheme exactly as it was before the theme system
-  onedark = function()
-    require("onedarkpro").setup({
-      options = { transparency = true, highlight_inactive_windows = false },
-    })
-    vim.cmd.colorscheme("onedark")
-  end,
+    -- Syntax (tree-sitter captures fall back to these)
+    Comment = { fg = c.fg_dim, italic = true },
+    Constant = { fg = c.yellow },
+    String = { fg = c.green },
+    Number = { fg = c.accent_alt },
+    Identifier = { fg = c.fg },
+    Function = { fg = c.blue },
+    Statement = { fg = c.magenta },
+    Operator = { fg = c.cyan },
+    PreProc = { fg = c.cyan },
+    Type = { fg = c.yellow },
+    Special = { fg = c.cyan },
+    Delimiter = { fg = c.fg },
+    Underlined = { fg = c.blue, underline = true },
+    Error = { fg = c.red },
+    Todo = { fg = c.bg, bg = c.accent_alt, bold = true },
+    ["@variable"] = { fg = c.fg },
+    ["@variable.builtin"] = { fg = c.red },
+    ["@variable.parameter"] = { fg = c.red },
+    ["@variable.member"] = { fg = c.cyan },
+    ["@property"] = { fg = c.cyan },
+    ["@constructor"] = { fg = c.yellow },
+    ["@function.builtin"] = { fg = c.cyan },
+    ["@tag"] = { fg = c.red },
+    ["@tag.attribute"] = { fg = c.yellow },
+    ["@tag.delimiter"] = { fg = c.fg_dim },
+    ["@markup.heading"] = { fg = c.magenta, bold = true },
+    ["@markup.link"] = { fg = c.blue, underline = true },
+    ["@markup.raw"] = { fg = c.green },
+    ["@markup.strong"] = { bold = true },
+    ["@markup.italic"] = { italic = true },
 
-  kanagawa = function(c)
-    require("lazy").load({ plugins = { "kanagawa.nvim" } })
-    require("kanagawa").setup({
-      theme = "dragon",
-      background = { dark = "dragon" },
-      transparent = true,
-      colors = {
-        -- Our palette is a livelier Dragon; map it onto Kanagawa's names
-        palette = {
-          dragonRed = c.red, dragonGreen = c.green, dragonGreen2 = c.bright_green,
-          dragonYellow = c.yellow, dragonBlue2 = c.blue, dragonViolet = c.magenta,
-          dragonAqua = c.cyan, dragonOrange = c.accent_alt, dragonWhite = c.fg,
-          dragonGray = c.fg_dim,
-        },
-        theme = { all = { ui = { bg_gutter = "none" } } },
-      },
-      overrides = function()
-        return {
-          Comment = { fg = c.fg_dim },
-          LineNr = { fg = c.fg_dim },
-          Visual = { bg = c.overlay },
-        }
-      end,
-    })
-    vim.cmd.colorscheme("kanagawa-dragon")
-  end,
+    -- Diagnostics and git
+    DiagnosticError = { fg = c.red },
+    DiagnosticWarn = { fg = c.accent_alt },
+    DiagnosticInfo = { fg = c.blue },
+    DiagnosticHint = { fg = c.cyan },
+    DiagnosticOk = { fg = c.green },
+    DiagnosticUnderlineError = { undercurl = true, sp = c.red },
+    DiagnosticUnderlineWarn = { undercurl = true, sp = c.accent_alt },
+    DiagnosticUnderlineInfo = { undercurl = true, sp = c.blue },
+    DiagnosticUnderlineHint = { undercurl = true, sp = c.cyan },
+    Added = { fg = c.green },
+    Changed = { fg = c.yellow },
+    Removed = { fg = c.red },
+    DiffAdd = { fg = c.green, bg = c.surface },
+    DiffChange = { fg = c.yellow, bg = c.surface },
+    DiffDelete = { fg = c.red, bg = c.surface },
+    DiffText = { fg = c.fg, bg = c.overlay, bold = true },
 
-  vesper = function(c)
-    require("lazy").load({ plugins = { "vesper.nvim" } })
-    require("vesper").setup({
-      transparent = true,
-      overrides = { Visual = { bg = c.overlay } },
-      -- Map our palette onto Vesper's names so it follows the terminal colors
-      palette_overrides = {
-        bg = c.bg, bgDark = c.bg_alt, bgFloat = c.surface, bgOption = c.overlay,
-        fg = c.fg, comment = c.fg_dim, fgInactive = c.fg_dim, fgLineNr = c.fg_dim,
-        red = c.red, redDark = c.red, error = c.red,
-        green = c.green, greenLight = c.green, info = c.green,
-        orange = c.accent, orangeLight = c.accent, purple = c.accent,
-        yellowDark = c.accent, warn = c.accent,
-        primary = c.blue, symbol = c.blue,
-      },
-    })
-    vim.cmd.colorscheme("vesper")
-  end,
-}
+    -- Plugins
+    TelescopeSelection = { link = "PmenuSel" },
+    TelescopeMatching = { fg = c.accent, bold = true },
+    TelescopeBorder = { link = "FloatBorder" },
+    CmpItemAbbrMatch = { fg = c.accent, bold = true },
+    CmpItemAbbrMatchFuzzy = { fg = c.accent, bold = true },
+    CmpItemAbbrDeprecated = { fg = c.fg_dim, strikethrough = true },
+    CmpItemMenu = { fg = c.fg_dim },
+    NeoTreeNormal = { link = "Normal" },
+    NeoTreeNormalNC = { link = "Normal" },
+    AlphaHeader = { fg = c.blue },
+    AlphaButtons = { fg = c.fg },
+    AlphaShortcut = { fg = c.accent },
+  }
+end
+
+-- The :terminal palette, same order as the terminal's ansi colors
+local function terminal_colors(c)
+  local ansi = {
+    c.surface, c.red, c.green, c.yellow, c.blue, c.magenta, c.cyan, c.fg,
+    c.fg_dim, c.bright_red, c.bright_green, c.bright_yellow, c.bright_blue,
+    c.bright_magenta, c.bright_cyan, "#ffffff",
+  }
+  for i, color in ipairs(ansi) do
+    vim.g["terminal_color_" .. (i - 1)] = color
+  end
+end
 
 local applied
 
 function M.apply()
   local name, black = current_choice()
-  local colors = load_colors(name, black)
-  local apply_scheme = appliers[colors.nvim or "onedarkpro"] or appliers.onedarkpro
-  apply_scheme(colors)
+  local c = load_colors(name, black)
+  vim.cmd("highlight clear")
+  vim.g.colors_name = "dotfiles"
+  for group, spec in pairs(highlights(c)) do
+    vim.api.nvim_set_hl(0, group, spec)
+  end
+  terminal_colors(c)
+  -- Lets plugins that derive colors from highlights (lualine) refresh
+  vim.api.nvim_exec_autocmds("ColorScheme", { modeline = false })
   applied = name .. "/" .. black
   return applied
 end

@@ -1,7 +1,6 @@
 # Neon: a Neo-Tokyo street at night in the rain. Almost everything is wet
 # asphalt gray-violet; color comes from a single pink sign, a sodium streetlight
 # amber and a faded teal reflection, all muted so they glow instead of shout.
-nvim = "onedarkpro"
 fg = "#d4d1da"
 fg_dim = "#b2b0ba"
 accent = "#ea9aba"

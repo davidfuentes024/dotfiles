@@ -1,16 +1,5 @@
 return {
-  -- THEME: picked by the shared `theme` command (see lua/core/theme.lua)
-  {
-    "olimorris/onedarkpro.nvim",
-    priority = 1000,
-    config = function()
-      require("core.theme").apply()
-    end
-  },
-  { "rebelot/kanagawa.nvim", lazy = true },
-  { "datsfilipe/vesper.nvim", lazy = true },
-
-  -- STATUS LINE (follows the active colorscheme)
+  -- STATUS LINE (follows the colors set in lua/core/theme.lua)
   {
     "nvim-lualine/lualine.nvim",
     config = function()

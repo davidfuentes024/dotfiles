@@ -2,8 +2,7 @@
 
 A theme is two small files combined at runtime:
 
-- `palettes/<name>.toml`: text and accent colors, which nvim colorscheme to use
-  and, optionally, a `border` color for windows (defaults to the accent) and
+- `palettes/<name>.toml`: text and accent colors and, optionally, a `border` color for windows (defaults to the accent) and
   its own background shades (`bg`, `bg_alt`, `surface`, `overlay`)
 - `blacks/<name>.toml`: shared background shades, used by any palette that does
   not define its own
