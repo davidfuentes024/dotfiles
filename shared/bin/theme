@@ -4,7 +4,7 @@
 #   theme                 show the current theme and black
 #   theme list            list available themes
 #   theme <name>          switch theme (neon, dragon, tunnel, mono)
-#   theme black <variant> switch the shared black (soft, deep)
+#   theme black <variant> switch the shared black (soft, deep; used by palettes without their own bg)
 #   theme font            list fonts
 #   theme font <name>     switch the global font (terminal, bar, lock screen, GTK)
 #   theme apply           regenerate everything from the saved choice
@@ -39,8 +39,10 @@ load_colors() {
   [ -f "$black" ]   || die "unknown black: $(current_black)"
 
   local key
+  # Background shades: the palette's own if it defines them, else the shared black
   for key in bg bg_alt surface overlay; do
-    eval "$key=\$(value \"\$black\" $key)"
+    eval "$key=\$(value \"\$palette\" $key)"
+    eval "[ -n \"\$$key\" ] || $key=\$(value \"\$black\" $key)"
   done
   for key in fg fg_dim accent accent_alt red green yellow blue magenta cyan; do
     eval "$key=\$(value \"\$palette\" $key)"

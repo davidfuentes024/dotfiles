@@ -71,8 +71,9 @@ end
 local theme_name = read_line(state_dir .. '/name', 'neon')
 local black_name = read_line(state_dir .. '/black', 'soft')
 local c = read_theme_file(themes_dir .. '/palettes/' .. theme_name .. '.toml')
+-- The shared black fills in any background shade the palette does not define
 for key, value in pairs(read_theme_file(themes_dir .. '/blacks/' .. black_name .. '.toml')) do
-  c[key] = value
+  if c[key] == nil then c[key] = value end
 end
 
 wezterm.add_to_config_reload_watch_list(state_dir .. '/name')

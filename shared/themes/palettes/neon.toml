@@ -18,3 +18,9 @@ bright_yellow = "#e6c393"
 bright_blue = "#b0adca"
 bright_magenta = "#d1a3d1"
 bright_cyan = "#97cbcf"
+
+# Background shades (override the shared black)
+bg = "#16141c"
+bg_alt = "#1d1b25"
+surface = "#27242f"
+overlay = "#3a3648"

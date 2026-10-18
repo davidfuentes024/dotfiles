@@ -34,7 +34,8 @@ end
 local function load_colors(name, black)
   local colors = read_theme_file(themes_dir .. "/palettes/" .. name .. ".toml")
   for key, value in pairs(read_theme_file(themes_dir .. "/blacks/" .. black .. ".toml")) do
-    colors[key] = value
+    -- The palette's own background shades win over the shared black
+    if colors[key] == nil then colors[key] = value end
   end
   return colors
 end

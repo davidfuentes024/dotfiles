@@ -1,8 +1,7 @@
-# One Dark: One Dark Pro text and accent colors. Meant to be paired with the
-# `onedark` black (theme black onedark), which keeps the very dark #121417
-# background instead of the original #282c34.
+# One Dark: One Dark Pro text and accent colors on the very dark #121417
+# background (set below) instead of the original #282c34.
 nvim = "onedark"
-fg = "#abb2bf"
+fg ="#abb2bf"
 fg_dim = "#5c6370"
 accent = "#528bff"
 accent_alt = "#e5c07b"
@@ -19,3 +18,9 @@ bright_yellow = "#e5c07b"
 bright_blue = "#61afef"
 bright_magenta = "#c678dd"
 bright_cyan = "#56b6c2"
+
+# Background shades (override the shared black)
+bg = "#121417"
+bg_alt = "#0d0f12"
+surface = "#1e2127"
+overlay = "#2c313a"
