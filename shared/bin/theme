@@ -205,10 +205,10 @@ apply() {
   load_colors
   generate_starship
   generate_tmux
-  generate_spotify_player
   reload_nvim
   # WezTerm reloads by itself: it watches the state files
   if [ "$(uname -s)" = "Linux" ]; then
+    generate_spotify_player
     generate_hyprlock
     generate_gtk
     if command -v hyprctl >/dev/null && [ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]; then

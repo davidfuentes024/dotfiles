@@ -43,10 +43,6 @@ link_shared() {
   link "$DOTFILES_DIR/shared/zsh/zshrc"  "$HOME/.zshrc"
   link "$DOTFILES_DIR/shared/starship/starship.toml" "$HOME/.config/starship.toml"
   link "$DOTFILES_DIR/shared/themes"     "$HOME/.config/themes"
-  # Only these two are linked: the folder also holds the private client_id and
-  # the generated theme.toml
-  link "$DOTFILES_DIR/shared/spotify-player/app.toml"    "$HOME/.config/spotify-player/app.toml"
-  link "$DOTFILES_DIR/shared/spotify-player/keymap.toml" "$HOME/.config/spotify-player/keymap.toml"
   # tmux now loads only from ~/.config/tmux
   unlink_stale "$HOME/.tmux.conf"
 }
@@ -58,6 +54,10 @@ link_linux() {
        "$HOME/.config/systemd/user/keyd-application-mapper.service"
   command -v systemctl >/dev/null && systemctl --user daemon-reload
   link "$DOTFILES_DIR/linux/quickshell" "$HOME/.config/quickshell"
+  # spotify-player is Linux-only. Only these two are linked: the folder also
+  # holds the private client_id and the generated theme.toml
+  link "$DOTFILES_DIR/linux/spotify-player/app.toml"    "$HOME/.config/spotify-player/app.toml"
+  link "$DOTFILES_DIR/linux/spotify-player/keymap.toml" "$HOME/.config/spotify-player/keymap.toml"
   # Apps provided by the shell (e.g. Notes), so the launcher lists them
   link "$DOTFILES_DIR/linux/applications/notes.desktop" "$HOME/.local/share/applications/notes.desktop"
 }
@@ -66,8 +66,10 @@ link_macos() {
   : # macOS-specific configs are sourced from the repo (macos/zsh); nothing to link yet
 }
 
-# Modules kept in their own repos (e.g. linux/quickshell/qs-music)
-git -C "$DOTFILES_DIR" submodule update --init --recursive
+# Modules kept in their own repos (linux/quickshell/qs-music): Linux only
+if [ "$(uname -s)" = "Linux" ]; then
+  git -C "$DOTFILES_DIR" submodule update --init --recursive
+fi
 
 link_shared
 case "$(uname -s)" in
