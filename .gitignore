@@ -26,3 +26,6 @@ linux/pkg/*/*.pkg.tar.zst
 
 # Backups left by install scripts
 *.bak
+
+# macOS
+.DS_Store
