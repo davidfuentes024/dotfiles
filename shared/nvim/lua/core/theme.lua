@@ -50,6 +50,10 @@ local appliers = {
           cyan = c.cyan, blue = c.blue, purple = c.magenta,
         },
       },
+      highlights = {
+        LineNr = { fg = c.fg_dim },
+        Visual = { bg = c.overlay },
+      },
       options = { transparency = true, highlight_inactive_windows = false },
     })
     vim.cmd.colorscheme("onedark_dark")
@@ -79,13 +83,33 @@ local appliers = {
         },
         theme = { all = { ui = { bg_gutter = "none" } } },
       },
+      overrides = function()
+        return {
+          Comment = { fg = c.fg_dim },
+          LineNr = { fg = c.fg_dim },
+          Visual = { bg = c.overlay },
+        }
+      end,
     })
     vim.cmd.colorscheme("kanagawa-dragon")
   end,
 
-  vesper = function()
+  vesper = function(c)
     require("lazy").load({ plugins = { "vesper.nvim" } })
-    require("vesper").setup({ transparent = true })
+    require("vesper").setup({
+      transparent = true,
+      overrides = { Visual = { bg = c.overlay } },
+      -- Map our palette onto Vesper's names so it follows the terminal colors
+      palette_overrides = {
+        bg = c.bg, bgDark = c.bg_alt, bgFloat = c.surface, bgOption = c.overlay,
+        fg = c.fg, comment = c.fg_dim, fgInactive = c.fg_dim, fgLineNr = c.fg_dim,
+        red = c.red, redDark = c.red, error = c.red,
+        green = c.green, greenLight = c.green, info = c.green,
+        orange = c.accent, orangeLight = c.accent, purple = c.accent,
+        yellowDark = c.accent, warn = c.accent,
+        primary = c.blue, symbol = c.blue,
+      },
+    })
     vim.cmd.colorscheme("vesper")
   end,
 }

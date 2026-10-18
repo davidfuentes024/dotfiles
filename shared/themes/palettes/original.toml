@@ -1,7 +1,7 @@
 # Original: the One Dark Pro Darker setup these dotfiles started with
 # (WezTerm palette, One Dark tmux bar, onedark in nvim), with bright white
 # window borders.
-nvim = "onedark"
+nvim = "onedarkpro"
 fg = "#d5d8df"
 fg_dim = "#b1b6bf"
 accent = "#7abcf2"
